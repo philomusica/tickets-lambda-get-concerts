@@ -1,4 +1,4 @@
-.PHONY: deps clean build deploy test lint vet fmt
+.PHONY: deps clean build deploy test vet fmt
 BINDIR:=./bin
 ZIPFILE:=function.zip
 BINARY:=main
@@ -22,9 +22,6 @@ endif
 
 test:
 	go test -v -cover ./...
-
-lint:
-	golint ./...
 
 vet:
 	go vet ./...
