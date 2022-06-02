@@ -35,10 +35,11 @@ func (e ErrNoConcerts) Error() string {
 
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
 type Concert struct {
-	Description string
-	ImageURL    string
-	Date        string
-	Time        string
+	Description     string
+	ImageURL        string
+	Date            string
+	Time            string
+	ConcertDateTime string
 }
 
 // ConvertEpochSecsToDateAndTimeStrings converts an epoch seconds time stamp to a date and time string in the format of Mon 2 Jan 2006 and 3:04PM
