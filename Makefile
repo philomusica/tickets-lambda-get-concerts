@@ -1,4 +1,4 @@
-.PHONY: deps clean build deploy
+.PHONY: deps clean build deploy test lint vet fmt
 BINDIR:=./bin
 ZIPFILE:=function.zip
 BINARY:=main
@@ -19,3 +19,15 @@ else
 	zip -r $(ZIPFILE) $(BINDIR)
 	aws lambda update-function-code --function-name $(ARN) --zip-file fileb://$(ZIPFILE)
 endif
+
+test:
+	go test -v -cover ./...
+
+lint:
+	golint ./...
+
+vet:
+	go vet ./...
+
+fmt:
+	go fmt ./...
