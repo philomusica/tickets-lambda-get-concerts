@@ -5,15 +5,41 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"os"
 	"time"
 )
 
+var (
+	tableName = os.Getenv("TABLE_NAME")
+)
+
+// ErrNoConcerts is a error type to handle if there are no upcoming concerts in the dynamoDB table
+type ErrNoConcerts struct {
+	message string
+}
+
+// NewErrNoConcerts is an function to generate a new ErrNoConcerts error type
+func NewErrNoConcerts(message string) ErrNoConcerts {
+	return ErrNoConcerts{
+		message: message,
+	}
+}
+func (e ErrNoConcerts) Error() string {
+	return e.message
+}
+
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
 type Concert struct {
-	Description string
-	ImageURL    string
-	Date        string
-	Time        string
+	Description     string
+	ImageURL        string
+	Date            string
+	Time            string
+	ConcertDateTime string
 }
 
 // ConvertEpochSecsToDateAndTimeStrings converts an epoch seconds time stamp to a date and time string in the format of Mon 2 Jan 2006 and 3:04PM
@@ -25,24 +51,61 @@ func ConvertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStam
 	return
 }
 
-// Handler is lambda handler function that executes the relevant business logic
-func Handler() (events.APIGatewayProxyResponse, error) {
+// GetConcertsFromDynamoDB gets all upcoming concerts from the dynamoDB table
+func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concerts *[]Concert) (err error) {
+	result, err := svc.Scan(&dynamodb.ScanInput{
+		TableName: aws.String(tableName),
+	})
 
-	response := events.APIGatewayProxyResponse{
+	if err != nil {
+		return
+	}
+	if *result.Count == int64(0) {
+		err = NewErrNoConcerts("No upcoming concerts")
+		return
+	}
+	for _, item := range result.Items {
+		concert := Concert{}
+		err = dynamodbattribute.UnmarshalMap(item, &concert)
+		if err != nil {
+			return
+		}
+		*concerts = append(*concerts, concert)
+	}
+
+	return
+}
+
+// Handler is lambda handler function that executes the relevant business logic
+func Handler() (response events.APIGatewayProxyResponse, err error) {
+
+	response = events.APIGatewayProxyResponse{
 		/* Body: string(b), */
 		Body:       fmt.Sprintf("Unable to retrieve concerts"),
 		StatusCode: 404,
 	}
 	concerts := make([]Concert, 3)
+	sess := session.New()
+	svc := dynamodb.New(sess)
+	err = GetConcertsFromDynamoDB(svc, &concerts)
+	if err != nil {
+		switch err.(type) {
+		case ErrNoConcerts:
+			response.Body = err.Error()
+			response.StatusCode = 200
+		}
+
+		return
+	}
 
 	br, err := json.Marshal(&concerts)
 	if err != nil {
-		return response, err
+		return
 	}
 
 	response.Body = string(br)
 
-	return response, nil
+	return
 }
 
 func main() {
