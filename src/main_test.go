@@ -45,3 +45,6 @@ func TestConvertEpochSecsToDateAndTimeStringsTimeValueWinter(t *testing.T) {
 		t.Errorf("Expected %s, got %s", expectedTime, result)
 	}
 }
+
+func TestGetConcertsFromDynamoDBSucessful(t *testing.T) {
+	
