@@ -92,9 +92,9 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 	if err != nil {
 		switch err.(type) {
 		case ErrNoConcerts:
-			err = nil
 			response.Body = err.Error()
 			response.StatusCode = 200
+			err = nil
 		}
 
 		return
