@@ -66,7 +66,7 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 		Body:       fmt.Sprintf("Unable to retrieve concerts"),
 		StatusCode: 404,
 	}
-	concerts := make([]Concert, 3)
+	concerts := make([]Concert, 0, 3)
 	sess := session.New()
 	svc := dynamodb.New(sess)
 	err = GetConcertsFromDynamoDB(svc, &concerts)
