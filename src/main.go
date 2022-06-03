@@ -18,21 +18,6 @@ var (
 	tableName = os.Getenv("TABLE_NAME")
 )
 
-// ErrNoConcerts is a error type to handle if there are no upcoming concerts in the dynamoDB table
-type ErrNoConcerts struct {
-	message string
-}
-
-// NewErrNoConcerts is an function to generate a new ErrNoConcerts error type
-func NewErrNoConcerts(message string) ErrNoConcerts {
-	return ErrNoConcerts{
-		message: message,
-	}
-}
-func (e ErrNoConcerts) Error() string {
-	return e.message
-}
-
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
 type Concert struct {
 	Description     string
@@ -60,10 +45,7 @@ func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concerts *[]Concert)
 	if err != nil {
 		return
 	}
-	if *result.Count == int64(0) {
-		err = NewErrNoConcerts("No upcoming concerts")
-		return
-	}
+
 	for _, item := range result.Items {
 		concert := Concert{}
 		err = dynamodbattribute.UnmarshalMap(item, &concert)
@@ -72,7 +54,6 @@ func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concerts *[]Concert)
 		}
 		*concerts = append(*concerts, concert)
 	}
-	fmt.Println(*concerts)
 
 	return
 }
@@ -90,13 +71,6 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 	svc := dynamodb.New(sess)
 	err = GetConcertsFromDynamoDB(svc, &concerts)
 	if err != nil {
-		switch err.(type) {
-		case ErrNoConcerts:
-			response.Body = err.Error()
-			response.StatusCode = 200
-			err = nil
-		}
-
 		return
 	}
 
