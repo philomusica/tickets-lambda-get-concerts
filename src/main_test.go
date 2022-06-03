@@ -125,8 +125,8 @@ func TestGetConcertsFromDynamoDBNoConcerts(t *testing.T) {
 	concerts := make([]Concert, 0, expectedNumConcerts)
 	mockSvc := &mockDynamoDBClientNoConcerts{}
 	err := GetConcertsFromDynamoDB(mockSvc, &concerts)
-	if err != err.(ErrNoConcerts) {
-		t.Errorf("Expected ErrNoConcerts type , got %s", err)
+	if err != nil {
+		t.Errorf("Expected no error, got %s", err.Error())
 	}
 
 	if len(concerts) != expectedNumConcerts {
