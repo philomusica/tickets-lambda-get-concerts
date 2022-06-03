@@ -52,6 +52,7 @@ func TestConvertEpochSecsToDateAndTimeStringsTimeValueWinter(t *testing.T) {
 type mockDynamoDBClientSuccess struct {
 	dynamodbiface.DynamoDBAPI
 }
+
 func (m *mockDynamoDBClientSuccess) Scan(input *dynamodb.ScanInput) (response *dynamodb.ScanOutput, err error) {
 	numConcerts := 2
 	items := make([]map[string]*dynamodb.AttributeValue, 0, numConcerts)
@@ -137,15 +138,15 @@ type mockDynamoDBClientResourceNotFound struct {
 	dynamodbiface.DynamoDBAPI
 }
 
-func (m *mockDynamoDBClientResourceNotFound ) Scan(input *dynamodb.ScanInput) (response *dynamodb.ScanOutput, err error) {
+func (m *mockDynamoDBClientResourceNotFound) Scan(input *dynamodb.ScanInput) (response *dynamodb.ScanOutput, err error) {
 	err = &dynamodb.ResourceNotFoundException{}
-	
+
 	return
 }
 
 func TestGetConcertsFromDynamoDBCannotAccessTable(t *testing.T) {
 	concerts := make([]Concert, 0)
-	mockSvc := &mockDynamoDBClientResourceNotFound {}
+	mockSvc := &mockDynamoDBClientResourceNotFound{}
 	err := GetConcertsFromDynamoDB(mockSvc, &concerts)
 	if err != err.(*dynamodb.ResourceNotFoundException) {
 		t.Errorf("Expected %s error type, got %s", "ResourceNotFoundException", err)
