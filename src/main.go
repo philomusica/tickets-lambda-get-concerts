@@ -39,7 +39,7 @@ type Concert struct {
 	ImageURL        string
 	Date            string
 	Time            string
-	ConcertDateTime string
+	ConcertDateTime int64
 }
 
 // ConvertEpochSecsToDateAndTimeStrings converts an epoch seconds time stamp to a date and time string in the format of Mon 2 Jan 2006 and 3:04PM
@@ -72,6 +72,7 @@ func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concerts *[]Concert)
 		}
 		*concerts = append(*concerts, concert)
 	}
+	fmt.Println(*concerts)
 
 	return
 }
@@ -96,6 +97,12 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 		}
 
 		return
+	}
+
+	for _, v := range concerts {
+		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(v.ConcertDateTime)
+		v.Date = dateStr
+		v.Time = timeStr
 	}
 
 	br, err := json.Marshal(&concerts)
