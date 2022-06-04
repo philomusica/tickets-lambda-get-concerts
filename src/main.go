@@ -21,12 +21,26 @@ var (
 
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
 type Concert struct {
-	ConcertID		string
+	ConcertID       string
 	Description     string
 	ImageURL        string
-	Date            string
-	Time            string
 	ConcertDateTime int64
+	TotalTickets    int
+	TicketsSold     int
+	FullPrice       float32
+	ConcessionPrice float32
+}
+
+// ClientConcert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
+type ClientConcert struct {
+	ConcertID        string
+	Description      string
+	ImageURL         string
+	Date string
+	Time string
+	AvailableTickets int
+	FullPrice        float32
+	ConcessionPrice  float32
 }
 
 // ConvertEpochSecsToDateAndTimeStrings converts an epoch seconds time stamp to a date and time string in the format of Mon 2 Jan 2006 and 3:04PM
@@ -48,10 +62,10 @@ func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concerts *[]Concert)
 	}
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
-		TableName: aws.String(tableName),
-		ExpressionAttributeNames: expr.Names(),
+		TableName:                 aws.String(tableName),
+		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
-		FilterExpression: expr.Filter(),
+		FilterExpression:          expr.Filter(),
 	})
 
 	if err != nil {
@@ -85,14 +99,25 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 	if err != nil {
 		return
 	}
+	
+	clientConcerts := make([]ClientConcert, 0, 3)
 
-	for i, _ := range concerts[:] {
-		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(concerts[i].ConcertDateTime)
-		concerts[i].Date = dateStr
-		concerts[i].Time = timeStr
+	for _, v := range concerts {
+		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(v.ConcertDateTime)
+		c := ClientConcert{
+			ConcertID: v.ConcertID,
+			Description: v.Description,
+			ImageURL: v.ImageURL,
+			Date: dateStr,
+			Time: timeStr,
+			AvailableTickets: v.TotalTickets - v.TicketsSold,
+			FullPrice: v.FullPrice,
+			ConcessionPrice: v.ConcessionPrice,
+		}
+		clientConcerts = append(clientConcerts, c)
 	}
 
-	br, err := json.Marshal(&concerts)
+	br, err := json.Marshal(&clientConcerts)
 	if err != nil {
 		return
 	}
