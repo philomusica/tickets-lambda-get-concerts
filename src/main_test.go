@@ -80,6 +80,22 @@ func (m *mockDynamoDBClientSuccess) Scan(input *dynamodb.ScanInput) (response *d
 	return
 }
 
+func (m *mockDynamoDBClientSuccess) GetItem(*dynamodb.GetItemInput) (*dynamodb.GetItemOutput, error) {
+	epochTomorrow := time.Now().AddDate(0, 0, 1).Unix()
+	response := dynamodb.GetItemOutput{}
+	item := map[string]*dynamodb.AttributeValue{}
+	item["ConcertID"] = &dynamodb.AttributeValue{}
+	item["ConcertID"].SetS("AAA")
+	item["Description"] = &dynamodb.AttributeValue{}
+	item["Description"].SetS("Summer Concert")
+	item["ImageURL"] = &dynamodb.AttributeValue{}
+	item["ImageURL"].SetS("http://example.com/image.jpg")
+	item["ConcertDateTime"] = &dynamodb.AttributeValue{}
+	item["ConcertDateTime"].SetN(fmt.Sprintf("%d", epochTomorrow))
+	response.SetItem(item)
+	return &response, nil
+}
+
 func TestGetConcertsFromDynamoDBSucessful(t *testing.T) {
 	expectedNumConcerts := 2
 	concerts := make([]Concert, 0, expectedNumConcerts)
@@ -120,6 +136,13 @@ func (m *mockDynamoDBClientNoConcerts) Scan(input *dynamodb.ScanInput) (response
 	return
 }
 
+func (m *mockDynamoDBClientNoConcerts) GetItem(*dynamodb.GetItemInput) (response *dynamodb.GetItemOutput, err error) {
+	response = &dynamodb.GetItemOutput{}
+	cc := dynamodb.ConsumedCapacity{}
+	response.SetConsumedCapacity(&cc)
+	response.SetItem(nil)
+	return
+}
 func TestGetConcertsFromDynamoDBNoConcerts(t *testing.T) {
 	expectedNumConcerts := 0
 	concerts := make([]Concert, 0, expectedNumConcerts)
@@ -150,5 +173,66 @@ func TestGetConcertsFromDynamoDBCannotAccessTable(t *testing.T) {
 	err := GetConcertsFromDynamoDB(mockSvc, &concerts)
 	if err != err.(*dynamodb.ResourceNotFoundException) {
 		t.Errorf("Expected %s error type, got %s", "ResourceNotFoundException", err)
+	}
+}
+
+func TestGetConcertFromDynamoDBSuccess(t *testing.T) {
+	var concert *Concert = &Concert{}
+	mockSvc := &mockDynamoDBClientSuccess{}
+	concertID := "AAA"
+	err := GetConcertFromDynamoDB(mockSvc, concertID, concert)
+	if err != nil {
+		t.Errorf("Expected no error, got %s", err.Error())
+	}
+
+	if concert.ConcertID != concertID {
+		t.Errorf("Expected entry with ConcertID %s, got %s", concertID, concert.ConcertID)
+	}
+}
+
+func TestGetConcertFromDynamoDBNoConcert(t *testing.T) {
+	var concert *Concert = &Concert{}
+	mockSvc := &mockDynamoDBClientNoConcerts{}
+	concertID := "AAA"
+	err := GetConcertFromDynamoDB(mockSvc, concertID, concert)
+	if err != nil {
+		t.Errorf("Expected no error, got %s", err.Error())
+	}
+
+	if *concert != (Concert{}) {
+		t.Errorf("Expected an empty Concert struct, got %v", concert)
+	}
+}
+
+type mockDynamoDBClientOldConcert struct {
+	dynamodbiface.DynamoDBAPI
+}
+
+func (m *mockDynamoDBClientOldConcert) GetItem(*dynamodb.GetItemInput) (*dynamodb.GetItemOutput, error) {
+	epochYesterday := time.Now().AddDate(0, 0, -1).Unix()
+	response := dynamodb.GetItemOutput{}
+	item := map[string]*dynamodb.AttributeValue{}
+	item["ConcertID"] = &dynamodb.AttributeValue{}
+	item["ConcertID"].SetS("AAA")
+	item["Description"] = &dynamodb.AttributeValue{}
+	item["Description"].SetS("Summer Concert")
+	item["ImageURL"] = &dynamodb.AttributeValue{}
+	item["ImageURL"].SetS("http://example.com/image.jpg")
+	item["ConcertDateTime"] = &dynamodb.AttributeValue{}
+	item["ConcertDateTime"].SetN(fmt.Sprintf("%d", epochYesterday))
+	response.SetItem(item)
+	return &response, nil
+}
+
+func TestGetConcertFromDynamoDBOldConcert(t *testing.T) {
+	var concert *Concert = &Concert{}
+	mockSvc := &mockDynamoDBClientOldConcert{}
+	concertID := "AAA"
+	err := GetConcertFromDynamoDB(mockSvc, concertID, concert)
+
+	errMessage, ok := err.(ErrConcertInPast)
+
+	if !ok {
+		t.Errorf("Expected ErrConcertInPass error, got %s", errMessage)
 	}
 }
