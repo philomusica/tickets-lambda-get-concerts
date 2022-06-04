@@ -86,10 +86,10 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 		return
 	}
 
-	for _, v := range concerts {
-		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(v.ConcertDateTime)
-		v.Date = dateStr
-		v.Time = timeStr
+	for i, _ := range concerts[:] {
+		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(concerts[i].ConcertDateTime)
+		concerts[i].Date = dateStr
+		concerts[i].Time = timeStr
 	}
 
 	br, err := json.Marshal(&concerts)
@@ -98,6 +98,7 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 	}
 
 	response.Body = string(br)
+	response.StatusCode = 200
 
 	return
 }
