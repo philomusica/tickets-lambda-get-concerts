@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"os"
 	"time"
 )
@@ -20,6 +21,7 @@ var (
 
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
 type Concert struct {
+	ConcertID		string
 	Description     string
 	ImageURL        string
 	Date            string
@@ -38,8 +40,18 @@ func ConvertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStam
 
 // GetConcertsFromDynamoDB gets all upcoming concerts from the dynamoDB table
 func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concerts *[]Concert) (err error) {
+	epochNow := time.Now().Unix()
+	filt := expression.Name("ConcertDateTime").GreaterThan(expression.Value(epochNow))
+	expr, err := expression.NewBuilder().WithFilter(filt).Build()
+	if err != nil {
+		return
+	}
+
 	result, err := svc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(tableName),
+		ExpressionAttributeNames: expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression: expr.Filter(),
 	})
 
 	if err != nil {
