@@ -36,11 +36,20 @@ type ClientConcert struct {
 	ConcertID        string
 	Description      string
 	ImageURL         string
-	Date string
-	Time string
+	Date             string
+	Time             string
 	AvailableTickets int
 	FullPrice        float32
 	ConcessionPrice  float32
+}
+
+// ErrConcertInPast is a custom error message to signify concert is in past and tickets can no longer be purchased for it
+type ErrConcertInPast struct {
+	Message string
+}
+
+func (e ErrConcertInPast) Error() string {
+	return e.Message
 }
 
 // ConvertEpochSecsToDateAndTimeStrings converts an epoch seconds time stamp to a date and time string in the format of Mon 2 Jan 2006 and 3:04PM
@@ -49,6 +58,41 @@ func ConvertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStam
 	fmt.Println(t)
 	date = t.Format("Mon 2 Jan 2006")
 	timeStamp = t.Format("3:04 PM")
+	return
+}
+
+// GetConcertFromDynamoDB retrieves a specific concert the dynamoDB table
+func GetConcertFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concertID string, concert *Concert) (err error) {
+	result, err := svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ConcertID": {
+				S: aws.String(concertID),
+			},
+		},
+	})
+
+	if err != nil {
+		return
+	}
+
+	if result.Item == nil {
+		fmt.Printf("Concert %s does not exist", concertID)
+		return
+	}
+	err = dynamodbattribute.UnmarshalMap(result.Item, concert)
+	if err != nil {
+		fmt.Printf("Issue unmarshalling table data, %v\n", err)
+		return
+	}
+
+	epochNow := time.Now().Unix()
+	if concert.ConcertDateTime < epochNow {
+		err = ErrConcertInPast{Message: "Error concert in the past, tickets are no longer available"}
+		fmt.Printf("Concert %s is in the past. Tickets are no longer available\n", concertID)
+		return
+	}
+
 	return
 }
 
@@ -92,6 +136,7 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 		Body:       fmt.Sprintf("Unable to retrieve concerts"),
 		StatusCode: 404,
 	}
+
 	concerts := make([]Concert, 0, 3)
 	sess := session.New()
 	svc := dynamodb.New(sess)
@@ -99,20 +144,20 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 	if err != nil {
 		return
 	}
-	
+
 	clientConcerts := make([]ClientConcert, 0, 3)
 
 	for _, v := range concerts {
 		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(v.ConcertDateTime)
 		c := ClientConcert{
-			ConcertID: v.ConcertID,
-			Description: v.Description,
-			ImageURL: v.ImageURL,
-			Date: dateStr,
-			Time: timeStr,
+			ConcertID:        v.ConcertID,
+			Description:      v.Description,
+			ImageURL:         v.ImageURL,
+			Date:             dateStr,
+			Time:             timeStr,
 			AvailableTickets: v.TotalTickets - v.TicketsSold,
-			FullPrice: v.FullPrice,
-			ConcessionPrice: v.ConcessionPrice,
+			FullPrice:        v.FullPrice,
+			ConcessionPrice:  v.ConcessionPrice,
 		}
 		clientConcerts = append(clientConcerts, c)
 	}
