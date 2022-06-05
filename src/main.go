@@ -128,15 +128,36 @@ func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concerts *[]Concert)
 	return
 }
 
-// Handler is lambda handler function that executes the relevant business logic
-func Handler() (response events.APIGatewayProxyResponse, err error) {
-
-	response = events.APIGatewayProxyResponse{
-		/* Body: string(b), */
-		Body:       fmt.Sprintf("Unable to retrieve concerts"),
-		StatusCode: 404,
+// GetConcert returns a json array of all concerts, marshalled into a byte array
+func GetConcert(id string) (jsonByteArray []byte, err error) {
+	concert := &Concert{}
+	sess := session.New()
+	svc := dynamodb.New(sess)
+	err = GetConcertFromDynamoDB(svc, id, concert)
+	if err != nil {
+		return
 	}
 
+	dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(concert.ConcertDateTime)
+	c := ClientConcert{
+		ConcertID:        concert.ConcertID,
+		Description:      concert.Description,
+		ImageURL:         concert.ImageURL,
+		Date:             dateStr,
+		Time:             timeStr,
+		AvailableTickets: concert.TotalTickets - concert.TicketsSold,
+		FullPrice:        concert.FullPrice,
+		ConcessionPrice:  concert.ConcessionPrice,
+	}
+	jsonByteArray, err = json.Marshal(&c)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// GetAllConcerts returns a json array of all concerts, marshalled into a byte array
+func GetAllConcerts() (jsonByteArray []byte, err error) {
 	concerts := make([]Concert, 0, 3)
 	sess := session.New()
 	svc := dynamodb.New(sess)
@@ -161,10 +182,34 @@ func Handler() (response events.APIGatewayProxyResponse, err error) {
 		}
 		clientConcerts = append(clientConcerts, c)
 	}
-
-	br, err := json.Marshal(&clientConcerts)
+	jsonByteArray, err = json.Marshal(&clientConcerts)
 	if err != nil {
 		return
+	}
+
+	return
+}
+
+// Handler is lambda handler function that executes the relevant business logic
+func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayProxyResponse, err error) {
+
+	response = events.APIGatewayProxyResponse{
+		Body:       fmt.Sprintf("Unable to retrieve concerts"),
+		StatusCode: 404,
+	}
+
+	var br []byte
+	id := request.QueryStringParameters["id"]
+	if id == "" {
+		br, err = GetAllConcerts()
+		if err != nil {
+			return
+		}
+	} else {
+		br, err = GetConcert(id)
+		if err != nil {
+			return
+		}
 	}
 
 	response.Body = string(br)
