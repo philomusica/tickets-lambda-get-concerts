@@ -24,7 +24,7 @@ type Concert struct {
 	ID              string
 	Description     string
 	ImageURL        string
-	DateTime int64
+	DateTime        int64
 	TotalTickets    int
 	TicketsSold     int
 	FullPrice       float32
