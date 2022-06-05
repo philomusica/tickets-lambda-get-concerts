@@ -21,7 +21,7 @@ var (
 
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
 type Concert struct {
-	ConcertID       string
+	ID              string
 	Description     string
 	ImageURL        string
 	ConcertDateTime int64
@@ -33,14 +33,14 @@ type Concert struct {
 
 // ClientConcert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
 type ClientConcert struct {
-	ConcertID        string
-	Description      string
-	ImageURL         string
-	Date             string
-	Time             string
-	AvailableTickets int
-	FullPrice        float32
-	ConcessionPrice  float32
+	ID               string  `json:"id"`
+	Description      string  `json:"description"`
+	ImageURL         string  `json:"imageURL"`
+	Date             string  `json:"date"`
+	Time             string  `json:"time"`
+	AvailableTickets int     `json:"availableTickets"`
+	FullPrice        float32 `json:"fullPrice"`
+	ConcessionPrice  float32 `json:"conessionPrice"`
 }
 
 // ErrConcertInPast is a custom error message to signify concert is in past and tickets can no longer be purchased for it
@@ -66,7 +66,7 @@ func GetConcertFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concertID string, con
 	result, err := svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
-			"ConcertID": {
+			"ID": {
 				S: aws.String(concertID),
 			},
 		},
@@ -140,7 +140,7 @@ func GetConcert(id string) (jsonByteArray []byte, err error) {
 
 	dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(concert.ConcertDateTime)
 	c := ClientConcert{
-		ConcertID:        concert.ConcertID,
+		ID:               concert.ID,
 		Description:      concert.Description,
 		ImageURL:         concert.ImageURL,
 		Date:             dateStr,
@@ -171,7 +171,7 @@ func GetAllConcerts() (jsonByteArray []byte, err error) {
 	for _, v := range concerts {
 		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(v.ConcertDateTime)
 		c := ClientConcert{
-			ConcertID:        v.ConcertID,
+			ID:               v.ID,
 			Description:      v.Description,
 			ImageURL:         v.ImageURL,
 			Date:             dateStr,
