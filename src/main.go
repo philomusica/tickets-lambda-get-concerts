@@ -24,7 +24,7 @@ type Concert struct {
 	ID              string
 	Description     string
 	ImageURL        string
-	ConcertDateTime int64
+	DateTime int64
 	TotalTickets    int
 	TicketsSold     int
 	FullPrice       float32
@@ -87,7 +87,7 @@ func GetConcertFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concertID string, con
 	}
 
 	epochNow := time.Now().Unix()
-	if concert.ConcertDateTime < epochNow {
+	if concert.DateTime < epochNow {
 		err = ErrConcertInPast{Message: "Error concert in the past, tickets are no longer available"}
 		fmt.Printf("Concert %s is in the past. Tickets are no longer available\n", concertID)
 		return
@@ -99,7 +99,7 @@ func GetConcertFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concertID string, con
 // GetConcertsFromDynamoDB gets all upcoming concerts from the dynamoDB table
 func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concerts *[]Concert) (err error) {
 	epochNow := time.Now().Unix()
-	filt := expression.Name("ConcertDateTime").GreaterThan(expression.Value(epochNow))
+	filt := expression.Name("DateTime").GreaterThan(expression.Value(epochNow))
 	expr, err := expression.NewBuilder().WithFilter(filt).Build()
 	if err != nil {
 		return
@@ -138,7 +138,7 @@ func GetConcert(id string) (jsonByteArray []byte, err error) {
 		return
 	}
 
-	dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(concert.ConcertDateTime)
+	dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(concert.DateTime)
 	c := ClientConcert{
 		ID:               concert.ID,
 		Description:      concert.Description,
@@ -169,7 +169,7 @@ func GetAllConcerts() (jsonByteArray []byte, err error) {
 	clientConcerts := make([]ClientConcert, 0, 3)
 
 	for _, v := range concerts {
-		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(v.ConcertDateTime)
+		dateStr, timeStr := ConvertEpochSecsToDateAndTimeStrings(v.DateTime)
 		c := ClientConcert{
 			ID:               v.ID,
 			Description:      v.Description,

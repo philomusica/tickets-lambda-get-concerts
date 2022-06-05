@@ -61,16 +61,16 @@ func (m *mockDynamoDBClientSuccess) Scan(input *dynamodb.ScanInput) (response *d
 	item1["Description"].SetS("Summer Concert")
 	item1["ImageURL"] = &dynamodb.AttributeValue{}
 	item1["ImageURL"].SetS("http://example.com/image.jpg")
-	item1["ConcertDateTime"] = &dynamodb.AttributeValue{}
-	item1["ConcertDateTime"].SetN(fmt.Sprintf("%d", summerEpoch))
+	item1["DateTime"] = &dynamodb.AttributeValue{}
+	item1["DateTime"].SetN(fmt.Sprintf("%d", summerEpoch))
 	items = append(items, item1)
 	item2 := map[string]*dynamodb.AttributeValue{}
 	item2["Description"] = &dynamodb.AttributeValue{}
 	item2["Description"].SetS("Winter Concert")
 	item2["ImageURL"] = &dynamodb.AttributeValue{}
 	item2["ImageURL"].SetS("http://example.com/image2.jpg")
-	item2["ConcertDateTime"] = &dynamodb.AttributeValue{}
-	item2["ConcertDateTime"].SetN(fmt.Sprintf("%d", winterEpoch))
+	item2["DateTime"] = &dynamodb.AttributeValue{}
+	item2["DateTime"].SetN(fmt.Sprintf("%d", winterEpoch))
 	items = append(items, item2)
 	numConcertsI64 := int64(numConcerts)
 	response = &dynamodb.ScanOutput{
@@ -90,8 +90,8 @@ func (m *mockDynamoDBClientSuccess) GetItem(*dynamodb.GetItemInput) (*dynamodb.G
 	item["Description"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
-	item["ConcertDateTime"] = &dynamodb.AttributeValue{}
-	item["ConcertDateTime"].SetN(fmt.Sprintf("%d", epochTomorrow))
+	item["DateTime"] = &dynamodb.AttributeValue{}
+	item["DateTime"].SetN(fmt.Sprintf("%d", epochTomorrow))
 	response.SetItem(item)
 	return &response, nil
 }
@@ -218,8 +218,8 @@ func (m *mockDynamoDBClientOldConcert) GetItem(*dynamodb.GetItemInput) (*dynamod
 	item["Description"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
-	item["ConcertDateTime"] = &dynamodb.AttributeValue{}
-	item["ConcertDateTime"].SetN(fmt.Sprintf("%d", epochYesterday))
+	item["DateTime"] = &dynamodb.AttributeValue{}
+	item["DateTime"].SetN(fmt.Sprintf("%d", epochYesterday))
 	response.SetItem(item)
 	return &response, nil
 }
