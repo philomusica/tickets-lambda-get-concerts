@@ -61,16 +61,16 @@ func (m *mockDynamoDBClientSuccess) Scan(input *dynamodb.ScanInput) (response *d
 	item1["Description"].SetS("Summer Concert")
 	item1["ImageURL"] = &dynamodb.AttributeValue{}
 	item1["ImageURL"].SetS("http://example.com/image.jpg")
-	item1["ConcertDateTime"] = &dynamodb.AttributeValue{}
-	item1["ConcertDateTime"].SetN(fmt.Sprintf("%d", summerEpoch))
+	item1["DateTime"] = &dynamodb.AttributeValue{}
+	item1["DateTime"].SetN(fmt.Sprintf("%d", summerEpoch))
 	items = append(items, item1)
 	item2 := map[string]*dynamodb.AttributeValue{}
 	item2["Description"] = &dynamodb.AttributeValue{}
 	item2["Description"].SetS("Winter Concert")
 	item2["ImageURL"] = &dynamodb.AttributeValue{}
 	item2["ImageURL"].SetS("http://example.com/image2.jpg")
-	item2["ConcertDateTime"] = &dynamodb.AttributeValue{}
-	item2["ConcertDateTime"].SetN(fmt.Sprintf("%d", winterEpoch))
+	item2["DateTime"] = &dynamodb.AttributeValue{}
+	item2["DateTime"].SetN(fmt.Sprintf("%d", winterEpoch))
 	items = append(items, item2)
 	numConcertsI64 := int64(numConcerts)
 	response = &dynamodb.ScanOutput{
@@ -84,14 +84,14 @@ func (m *mockDynamoDBClientSuccess) GetItem(*dynamodb.GetItemInput) (*dynamodb.G
 	epochTomorrow := time.Now().AddDate(0, 0, 1).Unix()
 	response := dynamodb.GetItemOutput{}
 	item := map[string]*dynamodb.AttributeValue{}
-	item["ConcertID"] = &dynamodb.AttributeValue{}
-	item["ConcertID"].SetS("AAA")
+	item["ID"] = &dynamodb.AttributeValue{}
+	item["ID"].SetS("AAA")
 	item["Description"] = &dynamodb.AttributeValue{}
 	item["Description"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
-	item["ConcertDateTime"] = &dynamodb.AttributeValue{}
-	item["ConcertDateTime"].SetN(fmt.Sprintf("%d", epochTomorrow))
+	item["DateTime"] = &dynamodb.AttributeValue{}
+	item["DateTime"].SetN(fmt.Sprintf("%d", epochTomorrow))
 	response.SetItem(item)
 	return &response, nil
 }
@@ -185,8 +185,8 @@ func TestGetConcertFromDynamoDBSuccess(t *testing.T) {
 		t.Errorf("Expected no error, got %s", err.Error())
 	}
 
-	if concert.ConcertID != concertID {
-		t.Errorf("Expected entry with ConcertID %s, got %s", concertID, concert.ConcertID)
+	if concert.ID != concertID {
+		t.Errorf("Expected entry with ID %s, got %s", concertID, concert.ID)
 	}
 }
 
@@ -212,14 +212,14 @@ func (m *mockDynamoDBClientOldConcert) GetItem(*dynamodb.GetItemInput) (*dynamod
 	epochYesterday := time.Now().AddDate(0, 0, -1).Unix()
 	response := dynamodb.GetItemOutput{}
 	item := map[string]*dynamodb.AttributeValue{}
-	item["ConcertID"] = &dynamodb.AttributeValue{}
-	item["ConcertID"].SetS("AAA")
+	item["ID"] = &dynamodb.AttributeValue{}
+	item["ID"].SetS("AAA")
 	item["Description"] = &dynamodb.AttributeValue{}
 	item["Description"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
-	item["ConcertDateTime"] = &dynamodb.AttributeValue{}
-	item["ConcertDateTime"].SetN(fmt.Sprintf("%d", epochYesterday))
+	item["DateTime"] = &dynamodb.AttributeValue{}
+	item["DateTime"].SetN(fmt.Sprintf("%d", epochYesterday))
 	response.SetItem(item)
 	return &response, nil
 }
