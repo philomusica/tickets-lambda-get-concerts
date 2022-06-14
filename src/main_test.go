@@ -195,12 +195,11 @@ func TestGetConcertFromDynamoDBNoConcert(t *testing.T) {
 	mockSvc := &mockDynamoDBClientNoConcerts{}
 	concertID := "AAA"
 	err := GetConcertFromDynamoDB(mockSvc, concertID, concert)
-	if err != nil {
-		t.Errorf("Expected no error, got %s", err.Error())
-	}
+	fmt.Println("err is ", err)
 
-	if *concert != (Concert{}) {
-		t.Errorf("Expected an empty Concert struct, got %v", concert)
+	errMessage, ok := err.(ErrConcertDoesNotExist)
+	if !ok {
+		t.Errorf("Expected ErrConcertDoesNotExist error, got %s", errMessage)
 	}
 }
 

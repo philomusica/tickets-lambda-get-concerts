@@ -52,6 +52,15 @@ func (e ErrConcertInPast) Error() string {
 	return e.Message
 }
 
+// ErrConcertDoesNotExist is a custom error message to signify the concert with a given ID does not exist
+type ErrConcertDoesNotExist struct {
+	Message string
+}
+
+func (e ErrConcertDoesNotExist) Error() string {
+	return e.Message
+}
+
 // ConvertEpochSecsToDateAndTimeStrings converts an epoch seconds time stamp to a date and time string in the format of Mon 2 Jan 2006 and 3:04PM
 func ConvertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStamp string) {
 	t := time.Unix(dateTime, 0)
@@ -77,7 +86,7 @@ func GetConcertFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concertID string, con
 	}
 
 	if result.Item == nil {
-		fmt.Printf("Concert %s does not exist", concertID)
+		err = ErrConcertDoesNotExist{Message: "Error does not exist"}
 		return
 	}
 	err = dynamodbattribute.UnmarshalMap(result.Item, concert)
