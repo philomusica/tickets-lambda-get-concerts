@@ -200,31 +200,32 @@ func GetAllConcerts() (jsonByteArray []byte, err error) {
 }
 
 // Handler is lambda handler function that executes the relevant business logic
-func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayProxyResponse, err error) {
+func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	response = events.APIGatewayProxyResponse{
+	response := events.APIGatewayProxyResponse{
 		Body:       fmt.Sprintf("Unable to retrieve concerts"),
 		StatusCode: 404,
 	}
 
 	var br []byte
+	var err error
 	id := request.QueryStringParameters["id"]
 	if id == "" {
 		br, err = GetAllConcerts()
 		if err != nil {
-			return
+			return response, nil
 		}
 	} else {
 		br, err = GetConcert(id)
 		if err != nil {
-			return
+			return response, nil
 		}
 	}
 
 	response.Body = string(br)
 	response.StatusCode = 200
 
-	return
+	return response, nil
 }
 
 func main() {
