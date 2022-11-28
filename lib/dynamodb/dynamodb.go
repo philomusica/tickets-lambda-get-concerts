@@ -1,10 +1,8 @@
-package lambda
+package dynamodb
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -40,8 +38,9 @@ type ClientConcert struct {
 	Time             string  `json:"time"`
 	AvailableTickets int     `json:"availableTickets"`
 	FullPrice        float32 `json:"fullPrice"`
-	ConcessionPrice  float32 `json:"conessionPrice"`
+	ConcessionPrice  float32 `json:"concessionPrice"`
 }
+
 
 // ErrConcertInPast is a custom error message to signify concert is in past and tickets can no longer be purchased for it
 type ErrConcertInPast struct {
@@ -197,37 +196,4 @@ func GetAllConcerts() (jsonByteArray []byte, err error) {
 	}
 
 	return
-}
-
-// Handler is lambda handler function that executes the relevant business logic
-func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	response := events.APIGatewayProxyResponse{
-		Body:       fmt.Sprintf("Unable to retrieve concerts"),
-		StatusCode: 404,
-	}
-
-	var br []byte
-	var err error
-	id := request.QueryStringParameters["id"]
-	if id == "" {
-		br, err = GetAllConcerts()
-		if err != nil {
-			return response, nil
-		}
-	} else {
-		br, err = GetConcert(id)
-		if err != nil {
-			return response, nil
-		}
-	}
-
-	response.Body = string(br)
-	response.StatusCode = 200
-
-	return response, nil
-}
-
-func main() {
-	lambda.Start(Handler)
 }

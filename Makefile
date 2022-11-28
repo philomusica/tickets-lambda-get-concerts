@@ -2,6 +2,8 @@
 BINDIR:=./bin
 ZIPFILE:=function.zip
 BINARY:=main
+CMD:=./cmd
+REPORT:=./report
 
 deps:
 	go get -u ./...
@@ -10,7 +12,8 @@ clean:
 	rm -rf $(BINDIR)
 
 build:
-	GOOS=linux GOARCH=amd64 go build -o $(BINDIR)/$(BINARY) ./...
+	mkdir -p $(BINDIR)
+	GOOS=linux GOARCH=amd64 go build -o $(BINDIR)/$(BINARY) $(CMD)
 
 deploy: build
 ifeq ($(ARN),)
@@ -22,6 +25,14 @@ endif
 
 test:
 	go test -v -cover ./...
+	go tool cover -html=cover.out -o $(REPORT)/index.html
+
+cover:
+	mkdir -p $(REPORT)
+	go test ./... -coverprofile $(REPORT)/cover.out
+	go tool cover -html=$(REPORT)/cover.out -o $(REPORT)/index.html
+	cd $(REPORT) && python3 -m http.server 8000
+	
 
 vet:
 	go vet ./...
