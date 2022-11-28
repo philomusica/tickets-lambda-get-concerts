@@ -1,4 +1,4 @@
-module main
+module github.com/philomusica/tickets-lambda-get-concerts
 
 go 1.18
 
