@@ -13,7 +13,7 @@ clean:
 
 build:
 	mkdir -p $(BINDIR)
-	GOOS=linux GOARCH=amd64 go build -o $(BINDIR)/$(BINARY) $(CMD)
+	GOOS=linux GOARCH=amd64 go build -gcflags="-m" -o $(BINDIR)/$(BINARY) $(CMD)
 
 deploy: build
 ifeq ($(ARN),)
@@ -25,7 +25,6 @@ endif
 
 test:
 	go test -v -cover ./...
-	go tool cover -html=cover.out -o $(REPORT)/index.html
 
 cover:
 	mkdir -p $(REPORT)
