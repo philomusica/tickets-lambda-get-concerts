@@ -30,7 +30,7 @@ type Concert struct {
 	ConcessionPrice  float32 `json:"concessionPrice"`
 }
 
-type ddbHandlerAPI interface {
+type DdbHandlerAPI interface {
 	GetConcertFromDynamoDB(concertID string) (concert *Concert, err error)
 	GetConcertsFromDynamoDB() (concerts []Concert, err error)
 }
@@ -39,7 +39,7 @@ type DDBHandler struct {
 	svc dynamodbiface.DynamoDBAPI
 }
 
-func New(svc dynamodbiface.DynamoDBAPI) (DDBHandler) {
+func New(svc dynamodbiface.DynamoDBAPI) DDBHandler {
 	d := DDBHandler{svc}
 	return d
 }
