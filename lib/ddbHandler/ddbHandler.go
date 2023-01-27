@@ -30,6 +30,20 @@ type Concert struct {
 	ConcessionPrice  float32 `json:"concessionPrice"`
 }
 
+type ddbHandlerAPI interface {
+	GetConcertFromDynamoDB(concertID string) (concert *Concert, err error)
+	GetConcertsFromDynamoDB() (concerts []Concert, err error)
+}
+
+type DDBHandler struct {
+	svc dynamodbiface.DynamoDBAPI
+}
+
+func New(svc dynamodbiface.DynamoDBAPI) (DDBHandler) {
+	d := DDBHandler{svc}
+	return d
+}
+
 // ErrConcertInPast is a custom error message to signify concert is in past and tickets can no longer be purchased for it
 type ErrConcertInPast struct {
 	Message string
@@ -77,9 +91,9 @@ func validateConcert(c *Concert) (valid bool) {
 }
 
 // GetConcertFromDynamoDB retrieves a specific concert from the dynamoDB table
-func GetConcertFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concertID string) (concert *Concert, err error) {
+func (d DDBHandler) GetConcertFromDynamoDB(concertID string) (concert *Concert, err error) {
 	concert = &Concert{}
-	result, err := svc.GetItem(&dynamodb.GetItemInput{
+	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"ID": {
@@ -125,7 +139,7 @@ func GetConcertFromDynamoDB(svc dynamodbiface.DynamoDBAPI, concertID string) (co
 }
 
 // GetConcertsFromDynamoDB gets all upcoming concerts from the dynamoDB table
-func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI) (concerts []Concert, err error) {
+func (d DDBHandler) GetConcertsFromDynamoDB() (concerts []Concert, err error) {
 	epochNow := time.Now().Unix()
 	filt := expression.Name("DateTime").GreaterThan(expression.Value(epochNow))
 	expr, err := expression.NewBuilder().WithFilter(filt).Build()
@@ -133,7 +147,7 @@ func GetConcertsFromDynamoDB(svc dynamodbiface.DynamoDBAPI) (concerts []Concert,
 		return
 	}
 
-	result, err := svc.Scan(&dynamodb.ScanInput{
+	result, err := d.svc.Scan(&dynamodb.ScanInput{
 		TableName:                 aws.String(tableName),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
