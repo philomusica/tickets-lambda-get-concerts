@@ -28,7 +28,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	id := request.QueryStringParameters["id"]
 	if id == "" {
 		var concerts []databaseHandler.Concert
-		concerts, err = dynamoHandler.GetConcertsFromDynamoDB()
+		concerts, err = dynamoHandler.GetConcertsFromDatabase()
 		if err != nil {
 			return response, nil
 		}
@@ -38,7 +38,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		}
 	} else {
 		var concert *databaseHandler.Concert
-		concert, err = dynamoHandler.GetConcertFromDynamoDB(id)
+		concert, err = dynamoHandler.GetConcertFromDatabase(id)
 		if err != nil {
 			return response, nil
 		}

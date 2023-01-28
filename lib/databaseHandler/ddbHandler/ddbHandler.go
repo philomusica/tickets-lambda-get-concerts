@@ -44,8 +44,8 @@ func validateConcert(c *databaseHandler.Concert) (valid bool) {
 	return
 }
 
-// GetConcertFromDynamoDB retrieves a specific concert from the dynamoDB table
-func (d DDBHandler) GetConcertFromDynamoDB(concertID string) (concert *databaseHandler.Concert, err error) {
+// GetConcertFromDatabase retrieves a specific concert from the dynamoDB table
+func (d DDBHandler) GetConcertFromDatabase(concertID string) (concert *databaseHandler.Concert, err error) {
 	concert = &databaseHandler.Concert{}
 	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
@@ -92,8 +92,8 @@ func (d DDBHandler) GetConcertFromDynamoDB(concertID string) (concert *databaseH
 	return
 }
 
-// GetConcertsFromDynamoDB gets all upcoming concerts from the dynamoDB table
-func (d DDBHandler) GetConcertsFromDynamoDB() (concerts []databaseHandler.Concert, err error) {
+// GetConcertsFromDatabase gets all upcoming concerts from the dynamoDB table
+func (d DDBHandler) GetConcertsFromDatabase() (concerts []databaseHandler.Concert, err error) {
 	epochNow := time.Now().Unix()
 	filt := expression.Name("DateTime").GreaterThan(expression.Value(epochNow))
 	expr, err := expression.NewBuilder().WithFilter(filt).Build()

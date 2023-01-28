@@ -16,6 +16,6 @@ type Concert struct {
 }
 
 type DatabaseHandler interface {
-	GetConcertFromDynamoDB(concertID string) (concert *Concert, err error)
-	GetConcertsFromDynamoDB() (concerts []Concert, err error)
+	GetConcertFromDatabase(concertID string) (concert *Concert, err error)
+	GetConcertsFromDatabase() (concerts []Concert, err error)
 }
