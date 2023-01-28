@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 	"os"
 	"testing"
 	"time"
@@ -269,7 +270,7 @@ func TestGetConcertFromDynamoDBNoConcert(t *testing.T) {
 	_, err := dynamoHandler.GetConcertFromDynamoDB(concertID)
 	fmt.Println("err is ", err)
 
-	errMessage, ok := err.(ErrConcertDoesNotExist)
+	errMessage, ok := err.(databaseHandler.ErrConcertDoesNotExist)
 	if !ok {
 		t.Errorf("Expected ErrConcertDoesNotExist error, got %s\n", errMessage)
 	}
@@ -349,7 +350,7 @@ func TestGetConcertFromDynamoDBMissingTicketPrices(t *testing.T) {
 	concertID := "AAA"
 	dynamoHandler := New(mockSvc)
 	_, err := dynamoHandler.GetConcertFromDynamoDB(concertID)
-	expectedErr, ok := err.(ErrInvalidConcertData)
+	expectedErr, ok := err.(databaseHandler.ErrInvalidConcertData)
 	if !ok {
 		t.Errorf("Expected %v error, got %v\n", expectedErr.Error(), err.Error())
 	}
@@ -359,7 +360,7 @@ func TestGetConcertsFromDynamoDBMissingDateTime(t *testing.T) {
 	mockSvc := &mockDynamoDBClientInvalidData{}
 	dynamoHandler := New(mockSvc)
 	_, err := dynamoHandler.GetConcertsFromDynamoDB()
-	expectedErr, ok := err.(ErrInvalidConcertData)
+	expectedErr, ok := err.(databaseHandler.ErrInvalidConcertData)
 	if !ok {
 		t.Errorf("Expected %v error, got %v\n", expectedErr.Error(), err.Error())
 	}
@@ -399,7 +400,7 @@ func TestGetConcertFromDynamoDBOldConcert(t *testing.T) {
 	dynamoHandler := New(mockSvc)
 	_, err := dynamoHandler.GetConcertFromDynamoDB(concertID)
 
-	expectedErr, ok := err.(ErrConcertInPast)
+	expectedErr, ok := err.(databaseHandler.ErrConcertInPast)
 
 	if !ok {
 		t.Errorf("Expected %s error, got %s\n", expectedErr, err)

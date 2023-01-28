@@ -1,10 +1,14 @@
-.PHONY: deps clean build deploy test vet fmt
 BINDIR:=./bin
 ZIPFILE:=function.zip
 BINARY:=main
 CMD:=./cmd
 REPORT:=./report
 
+$(BINARY):
+	mkdir -p $(BINDIR) 
+	GOOS=linux GOARCH=amd64 go build -gcflags="-m" -o $(BINDIR)/$(BINARY) $(CMD)
+
+.PHONY: deps clean build deploy test vet fmt
 deps:
 	go get -u ./...
 
@@ -12,8 +16,6 @@ clean:
 	rm -rf $(BINDIR)
 
 build:
-	mkdir -p $(BINDIR)
-	GOOS=linux GOARCH=amd64 go build -gcflags="-m" -o $(BINDIR)/$(BINARY) $(CMD)
 
 deploy: build
 ifeq ($(ARN),)
