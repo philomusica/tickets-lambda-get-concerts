@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 	"os"
 	"time"
 )
@@ -14,26 +15,6 @@ import (
 var (
 	tableName = os.Getenv("TABLE_NAME")
 )
-
-// Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
-type Concert struct {
-	ID               string  `json:"id"`
-	Description      string  `json:"description"`
-	ImageURL         string  `json:"imageURL"`
-	DateTime         *int64  `json:"dateTime,omitempty"`
-	Date             string  `json:"date"`
-	Time             string  `json:"time"`
-	TotalTickets     *uint8  `json:"totalTickets,omitempty"`
-	TicketsSold      *uint8  `json:"ticketsSold,omitempty"`
-	AvailableTickets uint8   `json:"availableTickets"`
-	FullPrice        float32 `json:"fullPrice"`
-	ConcessionPrice  float32 `json:"concessionPrice"`
-}
-
-type DdbHandlerAPI interface {
-	GetConcertFromDynamoDB(concertID string) (concert *Concert, err error)
-	GetConcertsFromDynamoDB() (concerts []Concert, err error)
-}
 
 type DDBHandler struct {
 	svc dynamodbiface.DynamoDBAPI
@@ -44,33 +25,6 @@ func New(svc dynamodbiface.DynamoDBAPI) DDBHandler {
 	return d
 }
 
-// ErrConcertInPast is a custom error message to signify concert is in past and tickets can no longer be purchased for it
-type ErrConcertInPast struct {
-	Message string
-}
-
-func (e ErrConcertInPast) Error() string {
-	return e.Message
-}
-
-// ErrConcertDoesNotExist is a custom error message to signify the concert with a given ID does not exist
-type ErrConcertDoesNotExist struct {
-	Message string
-}
-
-func (e ErrConcertDoesNotExist) Error() string {
-	return e.Message
-}
-
-// ErrInvalidConcertData is a custom error message to signify the data from dynamoDB that has been unmarshalled into a struct is incomplete
-type ErrInvalidConcertData struct {
-	Message string
-}
-
-func (e ErrInvalidConcertData) Error() string {
-	return e.Message
-}
-
 func convertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStamp string) {
 	t := time.Unix(dateTime, 0)
 	date = t.Format("Mon 2 Jan 2006")
@@ -78,7 +32,7 @@ func convertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStam
 	return
 }
 
-func validateConcert(c *Concert) (valid bool) {
+func validateConcert(c *databaseHandler.Concert) (valid bool) {
 	valid = false
 	fmt.Println("Checking", *c)
 
@@ -91,8 +45,8 @@ func validateConcert(c *Concert) (valid bool) {
 }
 
 // GetConcertFromDynamoDB retrieves a specific concert from the dynamoDB table
-func (d DDBHandler) GetConcertFromDynamoDB(concertID string) (concert *Concert, err error) {
-	concert = &Concert{}
+func (d DDBHandler) GetConcertFromDynamoDB(concertID string) (concert *databaseHandler.Concert, err error) {
+	concert = &databaseHandler.Concert{}
 	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -105,7 +59,7 @@ func (d DDBHandler) GetConcertFromDynamoDB(concertID string) (concert *Concert, 
 		fmt.Println("Issue getting item", err.Error())
 		return
 	} else if result.Item == nil {
-		err = ErrConcertDoesNotExist{Message: "Error does not exist"}
+		err = databaseHandler.ErrConcertDoesNotExist{Message: "Error does not exist"}
 		return
 	}
 
@@ -116,13 +70,13 @@ func (d DDBHandler) GetConcertFromDynamoDB(concertID string) (concert *Concert, 
 	}
 
 	if !validateConcert(concert) {
-		err = ErrInvalidConcertData{Message: fmt.Sprintf("Invalid concert data for concert %s\n", concertID)}
+		err = databaseHandler.ErrInvalidConcertData{Message: fmt.Sprintf("Invalid concert data for concert %s\n", concertID)}
 		return
 	}
 
 	epochNow := time.Now().Unix()
 	if *concert.DateTime < epochNow {
-		err = ErrConcertInPast{Message: fmt.Sprintf("Error concert %s in the past, tickets are no longer available", concertID)}
+		err = databaseHandler.ErrConcertInPast{Message: fmt.Sprintf("Error concert %s in the past, tickets are no longer available", concertID)}
 		fmt.Println(err.Error())
 		return
 	}
@@ -139,7 +93,7 @@ func (d DDBHandler) GetConcertFromDynamoDB(concertID string) (concert *Concert, 
 }
 
 // GetConcertsFromDynamoDB gets all upcoming concerts from the dynamoDB table
-func (d DDBHandler) GetConcertsFromDynamoDB() (concerts []Concert, err error) {
+func (d DDBHandler) GetConcertsFromDynamoDB() (concerts []databaseHandler.Concert, err error) {
 	epochNow := time.Now().Unix()
 	filt := expression.Name("DateTime").GreaterThan(expression.Value(epochNow))
 	expr, err := expression.NewBuilder().WithFilter(filt).Build()
@@ -167,7 +121,7 @@ func (d DDBHandler) GetConcertsFromDynamoDB() (concerts []Concert, err error) {
 
 	for _, v := range concerts {
 		if !validateConcert(&v) {
-			err = ErrInvalidConcertData{Message: fmt.Sprintf("Error concert %s in the past, tickets are no longer available", v.ID)}
+			err = databaseHandler.ErrInvalidConcertData{Message: fmt.Sprintf("Error concert %s in the past, tickets are no longer available", v.ID)}
 			fmt.Println(err.Error())
 			return
 		}

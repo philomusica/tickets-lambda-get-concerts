@@ -7,7 +7,8 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/philomusica/tickets-lambda-get-concerts/lib/ddbHandler"
+	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
+	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler/ddbHandler"
 )
 
 // Handler is lambda handler function that executes the relevant business logic
@@ -26,7 +27,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var err error
 	id := request.QueryStringParameters["id"]
 	if id == "" {
-		var concerts []ddbHandler.Concert
+		var concerts []databaseHandler.Concert
 		concerts, err = dynamoHandler.GetConcertsFromDynamoDB()
 		if err != nil {
 			return response, nil
@@ -36,7 +37,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 			return response, nil
 		}
 	} else {
-		var concert *ddbHandler.Concert
+		var concert *databaseHandler.Concert
 		concert, err = dynamoHandler.GetConcertFromDynamoDB(id)
 		if err != nil {
 			return response, nil
