@@ -144,7 +144,7 @@ func (m *mockDynamoDBClientSuccess) GetItem(*dynamodb.GetItemInput) (*dynamodb.G
 func TestGetConcertsFromDynamoDBSuccessful(t *testing.T) {
 	expectedNumConcerts := 2
 	mockSvc := &mockDynamoDBClientSuccess{}
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	concerts, err := dynamoHandler.GetConcertsFromDatabase()
 	if err != nil {
 		t.Errorf("Expected no error, got %s\n", err)
@@ -197,7 +197,7 @@ func (m *mockDynamoDBClientNoConcerts) GetItem(*dynamodb.GetItemInput) (output *
 func TestGetConcertsFromDynamoDBNoConcerts(t *testing.T) {
 	expectedNumConcerts := 0
 	mockSvc := &mockDynamoDBClientNoConcerts{}
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	concerts, err := dynamoHandler.GetConcertsFromDatabase()
 	if err != nil {
 		t.Errorf("Expected no error, got %s\n", err.Error())
@@ -225,7 +225,7 @@ func (m *mockDynamoDBClientResourceNotFound) GetItem(*dynamodb.GetItemInput) (*d
 
 func TestGetConcertsFromDynamoDBCannotAccessTable(t *testing.T) {
 	mockSvc := &mockDynamoDBClientResourceNotFound{}
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertsFromDatabase()
 	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
 
@@ -237,7 +237,7 @@ func TestGetConcertsFromDynamoDBCannotAccessTable(t *testing.T) {
 func TestGetConcertFromDynamoDBSuccess(t *testing.T) {
 	mockSvc := &mockDynamoDBClientSuccess{}
 	concertID := "AAA"
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	concert, err := dynamoHandler.GetConcertFromDatabase(concertID)
 	if err != nil {
 		t.Errorf("Expected no error, got %s\n", err.Error())
@@ -254,7 +254,7 @@ func TestGetConcertFromDynamoDBSuccess(t *testing.T) {
 func TestGetConcertFromDynamoDBCannotAccessTable(t *testing.T) {
 	mockSvc := &mockDynamoDBClientResourceNotFound{}
 	concertID := "AAA"
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertFromDatabase(concertID)
 	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
 
@@ -266,7 +266,7 @@ func TestGetConcertFromDynamoDBCannotAccessTable(t *testing.T) {
 func TestGetConcertFromDynamoDBNoConcert(t *testing.T) {
 	mockSvc := &mockDynamoDBClientNoConcerts{}
 	concertID := "AAA"
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertFromDatabase(concertID)
 	fmt.Println("err is ", err)
 
@@ -348,7 +348,7 @@ func (m *mockDynamoDBClientInvalidData) Scan(input *dynamodb.ScanInput) (output 
 func TestGetConcertFromDynamoDBMissingTicketPrices(t *testing.T) {
 	mockSvc := &mockDynamoDBClientInvalidData{}
 	concertID := "AAA"
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertFromDatabase(concertID)
 	expectedErr, ok := err.(databaseHandler.ErrInvalidConcertData)
 	if !ok {
@@ -358,7 +358,7 @@ func TestGetConcertFromDynamoDBMissingTicketPrices(t *testing.T) {
 
 func TestGetConcertsFromDynamoDBMissingDateTime(t *testing.T) {
 	mockSvc := &mockDynamoDBClientInvalidData{}
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertsFromDatabase()
 	expectedErr, ok := err.(databaseHandler.ErrInvalidConcertData)
 	if !ok {
@@ -397,7 +397,7 @@ func (m *mockDynamoDBClientOldConcert) GetItem(*dynamodb.GetItemInput) (*dynamod
 func TestGetConcertFromDynamoDBOldConcert(t *testing.T) {
 	mockSvc := &mockDynamoDBClientOldConcert{}
 	concertID := "AAA"
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertFromDatabase(concertID)
 
 	expectedErr, ok := err.(databaseHandler.ErrConcertInPast)
@@ -456,7 +456,7 @@ func (m *mockDynamoDBClientCannotUnmarshal) Scan(input *dynamodb.ScanInput) (out
 func TestGetConcertFromDynamoDBCannotUnmarshal(t *testing.T) {
 	mockSvc := &mockDynamoDBClientCannotUnmarshal{}
 	concertID := "AAA"
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertFromDatabase(concertID)
 
 	expectedErr, ok := err.(*dynamodbattribute.UnmarshalTypeError)
@@ -468,7 +468,7 @@ func TestGetConcertFromDynamoDBCannotUnmarshal(t *testing.T) {
 
 func TestGetConcertsFromDynamoDBCannotUnmarshal(t *testing.T) {
 	mockSvc := &mockDynamoDBClientCannotUnmarshal{}
-	dynamoHandler := New(mockSvc)
+	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertsFromDatabase()
 
 	expectedErr, ok := err.(*dynamodbattribute.UnmarshalTypeError)
@@ -477,3 +477,14 @@ func TestGetConcertsFromDynamoDBCannotUnmarshal(t *testing.T) {
 		t.Errorf("Expected err %s, got %s\n", expectedErr, err)
 	}
 }
+
+func TestGenerateOrderReference(t *testing.T) {
+	var size uint8 = 4
+	result := generateOrderReference(size)
+	fmt.Println(result)
+
+	if uint8(len(result)) != size {
+		t.Errorf("Expected reference of size %v, got %v", size, len(result))
+	}
+}
+	

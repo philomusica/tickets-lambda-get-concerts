@@ -8,20 +8,23 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	"os"
+	"github.com/philomusica/tickets-lambda-process-payment/lib/paymentHandler"
+	"math/rand"
 	"time"
-)
-
-var (
-	tableName = os.Getenv("TABLE_NAME")
 )
 
 type DDBHandler struct {
 	svc dynamodbiface.DynamoDBAPI
+	concertsTable string
+	purchasedTicketsTable string
 }
 
-func New(svc dynamodbiface.DynamoDBAPI) DDBHandler {
-	d := DDBHandler{svc}
+func New(svc dynamodbiface.DynamoDBAPI, concertsTable string, purchasedTicketsTable string) DDBHandler {
+	d := DDBHandler{
+		svc,
+		concertsTable,
+		purchasedTicketsTable,
+	}
 	return d
 }
 
@@ -44,11 +47,28 @@ func validateConcert(c *databaseHandler.Concert) (valid bool) {
 	return
 }
 
+func generateOrderReference(size uint8) string {
+	charSet := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") 
+	fmt.Println(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano())
+	arr := make([]byte, size, size)
+	var i uint8
+	for i = 0; i < size; i++ {
+		arr[i] = charSet[rand.Intn(len(charSet))]
+	}
+	return string(arr)
+}
+
+// CreateEntryInPurchasedTicketsDatabase takes the paymentRequest struct, generates a new payment references, checks for uniqueness and creates an entry in the purchased tickets database. Returns an error if it fails at any point
+func (d DDBHandler) CreateEntryInPurchasedTicketsDatabase(payReq paymentHandler.PaymentRequest) (err error) {
+	return
+}
+
 // GetConcertFromDatabase retrieves a specific concert from the dynamoDB table
 func (d DDBHandler) GetConcertFromDatabase(concertID string) (concert *databaseHandler.Concert, err error) {
 	concert = &databaseHandler.Concert{}
 	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.concertsTable),
 		Key: map[string]*dynamodb.AttributeValue{
 			"ID": {
 				S: aws.String(concertID),
@@ -102,7 +122,7 @@ func (d DDBHandler) GetConcertsFromDatabase() (concerts []databaseHandler.Concer
 	}
 
 	result, err := d.svc.Scan(&dynamodb.ScanInput{
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.concertsTable),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
