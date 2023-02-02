@@ -268,7 +268,6 @@ func TestGetConcertFromDynamoDBNoConcert(t *testing.T) {
 	concertID := "AAA"
 	dynamoHandler := New(mockSvc, "concerts-table", "purchased-tickets-table")
 	_, err := dynamoHandler.GetConcertFromDatabase(concertID)
-	fmt.Println("err is ", err)
 
 	errMessage, ok := err.(databaseHandler.ErrConcertDoesNotExist)
 	if !ok {

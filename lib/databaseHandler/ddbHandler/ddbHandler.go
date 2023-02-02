@@ -37,7 +37,6 @@ func convertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStam
 
 func validateConcert(c *databaseHandler.Concert) (valid bool) {
 	valid = false
-	fmt.Println("Checking", *c)
 
 	if c.ID != "" && c.Description != "" && c.ImageURL != "" &&
 		c.DateTime != nil && *c.DateTime > 0 && c.TotalTickets != nil && *c.TotalTickets > 0 &&
