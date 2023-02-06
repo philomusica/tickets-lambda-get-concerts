@@ -22,5 +22,6 @@ type Concert struct {
 type DatabaseHandler interface {
 	GetConcertFromDatabase(concertID string) (concert *Concert, err error)
 	GetConcertsFromDatabase() (concerts []Concert, err error)
-	CreateEntryInPurchasedTicketsDatabase(payReq paymentHandler.PaymentRequest) (err error)
+	CreateEntryInOrdersDatabase(order paymentHandler.Order) (err error)
+	GetOrderDetails(concertId string, ref string) (order *paymentHandler.Order, err error)
 }

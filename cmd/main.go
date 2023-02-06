@@ -59,14 +59,14 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	svc := dynamodb.New(sess)
 
 	concertsTable := os.Getenv("CONCERTS_TABLE")
-	purchasedTicketsTable := os.Getenv("PURCHASED_TICKETS_TABLE")
-	if concertsTable == "" || purchasedTicketsTable == "" {
-		fmt.Println("CONCERT_TABLE and/or PURCHASED_TICKETS_TABLE environment variables not set")
+	ordersTable := os.Getenv("ORDERS_TABLE")
+	if concertsTable == "" || ordersTable == "" {
+		fmt.Println("CONCERT_TABLE and/or ORDERS_TABLE environment variables not set")
 		response.StatusCode = 500
 		return response, nil
 	}
 
-	dynamoHandler := ddbHandler.New(svc, concertsTable, purchasedTicketsTable)
+	dynamoHandler := ddbHandler.New(svc, concertsTable, ordersTable)
 
 	return getConcertData(request, dynamoHandler)
 }
