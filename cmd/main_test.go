@@ -1,14 +1,13 @@
 package cmd
 
 import (
-	//	"fmt"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	//"os"
+	"os"
 	"testing"
 )
 
-/*
 	func TestMain(m *testing.M) {
 		rc := m.Run()
 
@@ -22,7 +21,6 @@ import (
 		}
 		os.Exit(rc)
 	}
-*/
 
 // ===============================================================================================================================
 // GET_CONCERT_DATA TESTS
