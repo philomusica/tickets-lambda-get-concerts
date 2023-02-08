@@ -20,8 +20,8 @@ type Concert struct {
 }
 
 type DatabaseHandler interface {
-	GetConcertFromDatabase(concertID string) (concert *Concert, err error)
-	GetConcertsFromDatabase() (concerts []Concert, err error)
-	CreateEntryInOrdersDatabase(order paymentHandler.Order) (err error)
-	GetOrderDetails(concertId string, ref string) (order *paymentHandler.Order, err error)
+	CreateOrderInTable(order paymentHandler.Order) (err error)
+	GetConcertFromTable(concertID string) (concert *Concert, err error)
+	GetConcertsFromTable() (concerts []Concert, err error)
+	GetOrderFromTable(concertId string, ref string) (order *paymentHandler.Order, err error)
 }

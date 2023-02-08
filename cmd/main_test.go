@@ -4,7 +4,7 @@ import (
 	//	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	"os"
+	//"os"
 	"testing"
 )
 
@@ -23,29 +23,28 @@ import (
 		os.Exit(rc)
 	}
 */
-func TestHandlerEnvironmentVariablesNotSet(t *testing.T) {
-	request := events.APIGatewayProxyRequest{}
-	response, _ := Handler(request)
-	expectedStatusCode := 500
-	expectedBody := "Unable to retrieve concerts - Internal Server Error"
-	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
-		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
-	}
-}
+
+// ===============================================================================================================================
+// GET_CONCERT_DATA TESTS
+// ===============================================================================================================================
+
+// ===============================================================================================================================
+// END GET_CONCERT_DATA TESTS
+// ===============================================================================================================================
 
 type mockDDBHandlerGetConcertsFails struct {
 	databaseHandler.DatabaseHandler
 }
 
-func (m mockDDBHandlerGetConcertsFails) GetConcertsFromDatabase() (concerts []databaseHandler.Concert, err error) {
+func (m mockDDBHandlerGetConcertsFails) GetConcertsFromTable() (concerts []databaseHandler.Concert, err error) {
 	err = databaseHandler.ErrInvalidConcertData{Message: "Invalid concert data"}
 	return
 }
 
-func TestHandlerCallToGetConcertsFails(t *testing.T) {
+func TestGetConcertDataGetConcertsFails(t *testing.T) {
 	request := events.APIGatewayProxyRequest{}
-	os.Setenv("CONCERTS_TABLE", "concerts-table")
-	os.Setenv("ORDERS_TABLE", "orders-table")
+	t.Setenv("CONCERTS_TABLE", "concerts-table")
+	t.Setenv("ORDERS_TABLE", "orders-table")
 	mockddbHandler := mockDDBHandlerGetConcertsFails{}
 	_, err := getConcertData(request, mockddbHandler)
 
@@ -60,14 +59,14 @@ type mockDDBHandlerGetConcertsReturnsEmptyConcertsSlice struct {
 	databaseHandler.DatabaseHandler
 }
 
-func (m mockDDBHandlerGetConcertsReturnsEmptyConcertsSlice) GetConcertsFromDatabase() (concerts []databaseHandler.Concert, err error) {
+func (m mockDDBHandlerGetConcertsReturnsEmptyConcertsSlice) GetConcertsFromTable() (concerts []databaseHandler.Concert, err error) {
 	return
 }
 
-func TestHandlerUnableToMarshalConcert(t *testing.T) {
+func TestGetConcertDataCannotMarshalConcert(t *testing.T) {
 	request := events.APIGatewayProxyRequest{}
-	os.Setenv("CONCERTS_TABLE", "concerts-table")
-	os.Setenv("ORDERS_TABLE", "orders-table")
+	t.Setenv("CONCERTS_TABLE", "concerts-table")
+	t.Setenv("ORDERS_TABLE", "orders-table")
 	mockddbHandler := mockDDBHandlerGetConcertsReturnsEmptyConcertsSlice{}
 	response, _ := getConcertData(request, mockddbHandler)
 	expectedStatusCode := 404
@@ -78,11 +77,25 @@ func TestHandlerUnableToMarshalConcert(t *testing.T) {
 	}
 }
 
+// ===============================================================================================================================
+// HANDLER TESTS
+// ===============================================================================================================================
+
+func TestHandlerEnvironmentVariablesNotSet(t *testing.T) {
+	request := events.APIGatewayProxyRequest{}
+	response, _ := Handler(request)
+	expectedStatusCode := 500
+	expectedBody := "Unable to retrieve concerts - Internal Server Error"
+	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
+		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
+	}
+}
+
 type mockDDBHandlerGetConcertsSuccess struct {
 	databaseHandler.DatabaseHandler
 }
 
-func (m mockDDBHandlerGetConcertsSuccess) GetConcertsFromDatabase() (concerts []databaseHandler.Concert, err error) {
+func (m mockDDBHandlerGetConcertsSuccess) GetConcertsFromTable() (concerts []databaseHandler.Concert, err error) {
 	c := databaseHandler.Concert{
 		ID:               "ABC",
 		Description:      "Summer Concert",
@@ -97,10 +110,10 @@ func (m mockDDBHandlerGetConcertsSuccess) GetConcertsFromDatabase() (concerts []
 	return
 }
 
-func TestHandlerGetConcertsSuccess(t *testing.T) {
+func TestGetConcertDataGetConcertsSuccess(t *testing.T) {
 	request := events.APIGatewayProxyRequest{}
-	os.Setenv("CONCERTS_TABLE", "concerts-table")
-	os.Setenv("ORDERS_TABLE", "orders-table")
+	t.Setenv("CONCERTS_TABLE", "concerts-table")
+	t.Setenv("ORDERS_TABLE", "orders-table")
 
 	mockddbHandler := mockDDBHandlerGetConcertsSuccess{}
 	response, _ := getConcertData(request, mockddbHandler)
@@ -117,19 +130,19 @@ type mockDDBHandlerGetConcertFails struct {
 	databaseHandler.DatabaseHandler
 }
 
-func (m mockDDBHandlerGetConcertFails) GetConcertFromDatabase(concertId string) (concert *databaseHandler.Concert, err error) {
+func (m mockDDBHandlerGetConcertFails) GetConcertFromTable(concertId string) (concert *databaseHandler.Concert, err error) {
 	err = databaseHandler.ErrConcertInPast{Message: "Concert x is in the past"}
 	return
 }
 
-func TestHandlerGetConcertReturnsError(t *testing.T) {
+func TestGetConcertDataGetConcertFails(t *testing.T) {
 	params := make(map[string]string)
 	params["id"] = "ABC"
 	request := events.APIGatewayProxyRequest{
 		QueryStringParameters: params,
 	}
-	os.Setenv("CONCERTS_TABLE", "concerts-table")
-	os.Setenv("ORDERS_TABLE", "orders-table")
+	t.Setenv("CONCERTS_TABLE", "concerts-table")
+	t.Setenv("ORDERS_TABLE", "orders-table")
 
 	mockddbHandler := mockDDBHandlerGetConcertFails{}
 	_, err := getConcertData(request, mockddbHandler)
@@ -144,7 +157,7 @@ type mockDDBHandlerGetConcertSuccess struct {
 	databaseHandler.DatabaseHandler
 }
 
-func (m mockDDBHandlerGetConcertSuccess) GetConcertFromDatabase(concertId string) (concert *databaseHandler.Concert, err error) {
+func (m mockDDBHandlerGetConcertSuccess) GetConcertFromTable(concertId string) (concert *databaseHandler.Concert, err error) {
 	concert = &databaseHandler.Concert{
 		ID:               "ABC",
 		Description:      "Summer Concert",
@@ -158,14 +171,14 @@ func (m mockDDBHandlerGetConcertSuccess) GetConcertFromDatabase(concertId string
 	return
 }
 
-func TestHandlerGetConcertSuccess(t *testing.T) {
+func TestGetConcertDataGetConcertSuccess(t *testing.T) {
 	params := make(map[string]string)
 	params["id"] = "ABC"
 	request := events.APIGatewayProxyRequest{
 		QueryStringParameters: params,
 	}
-	os.Setenv("CONCERTS_TABLE", "concerts-table")
-	os.Setenv("ORDERS_TABLE", "orders-table")
+	t.Setenv("CONCERTS_TABLE", "concerts-table")
+	t.Setenv("ORDERS_TABLE", "orders-table")
 
 	mockddbHandler := mockDDBHandlerGetConcertSuccess{}
 	response, err := getConcertData(request, mockddbHandler)
@@ -181,3 +194,7 @@ func TestHandlerGetConcertSuccess(t *testing.T) {
 		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
 	}
 }
+
+// ===============================================================================================================================
+// END HANDLER TESTS
+// ===============================================================================================================================
