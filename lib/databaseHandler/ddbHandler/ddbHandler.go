@@ -2,29 +2,36 @@ package ddbHandler
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	"os"
-	"time"
+	"github.com/philomusica/tickets-lambda-process-payment/lib/paymentHandler"
 )
 
-var (
-	tableName = os.Getenv("TABLE_NAME")
-)
-
+// ===============================================================================================================================
+// TYPE DEFINITIONS
+// ===============================================================================================================================
 type DDBHandler struct {
-	svc dynamodbiface.DynamoDBAPI
+	svc           dynamodbiface.DynamoDBAPI
+	concertsTable string
+	ordersTable   string
 }
 
-func New(svc dynamodbiface.DynamoDBAPI) DDBHandler {
-	d := DDBHandler{svc}
-	return d
-}
+// ===============================================================================================================================
+// END OF TYPE DEFINITIONS
+// ===============================================================================================================================
 
+// ===============================================================================================================================
+// PRIVATE FUNCTIONS
+// ===============================================================================================================================
+
+// convertEpochSecsToDateAndTimeStrings takes a dateTime int64 and returns two strings, date (formatted as Mon 2 Jan 2006) and timeStamp (formatted as 3:04 PM)
 func convertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStamp string) {
 	t := time.Unix(dateTime, 0)
 	date = t.Format("Mon 2 Jan 2006")
@@ -32,9 +39,36 @@ func convertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStam
 	return
 }
 
+// createOrderEntry is a private method on the DDBHandler struct which takes a pointer to the paymentHandler.Order struct and attempts to write it the dynamodb table. Method returns an error (nil if successful)
+func (d DDBHandler) createOrderEntry(order *paymentHandler.Order) (err error) {
+	av, err := dynamodbattribute.MarshalMap(order)
+	if err != nil {
+		return
+	}
+
+	_, err = d.svc.PutItem(&dynamodb.PutItemInput{
+		TableName:           aws.String(d.ordersTable),
+		Item:                av,
+		ConditionExpression: aws.String("attribute_not_exists(ConcertId) AND attribute_not_exists(Reference)"),
+	})
+	return
+}
+
+// generateOrderReference takes a uint8 indicating the num of random characters to generate, and returns the random in the form of a string
+func generateOrderReference(size uint8) string {
+	charSet := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+	rand.Seed(time.Now().UnixNano())
+	arr := make([]byte, size, size)
+	var i uint8
+	for i = 0; i < size; i++ {
+		arr[i] = charSet[rand.Intn(len(charSet))]
+	}
+	return string(arr)
+}
+
+// validateConcert takes a pointer to a databaseHandler.Concert struct and checks the validity of the members
 func validateConcert(c *databaseHandler.Concert) (valid bool) {
 	valid = false
-	fmt.Println("Checking", *c)
 
 	if c.ID != "" && c.Description != "" && c.ImageURL != "" &&
 		c.DateTime != nil && *c.DateTime > 0 && c.TotalTickets != nil && *c.TotalTickets > 0 &&
@@ -44,11 +78,37 @@ func validateConcert(c *databaseHandler.Concert) (valid bool) {
 	return
 }
 
-// GetConcertFromDatabase retrieves a specific concert from the dynamoDB table
-func (d DDBHandler) GetConcertFromDatabase(concertID string) (concert *databaseHandler.Concert, err error) {
+// ===============================================================================================================================
+// END OF PRIVATE FUNCTIONS
+// ===============================================================================================================================
+
+// ===============================================================================================================================
+// PUBLIC FUNCTIONS
+// ===============================================================================================================================
+
+// CreateOrderInTable takes the paymentRequest struct, generates a new payment references, checks for uniqueness and creates an entry in the orders table. Returns an error if it fails at any point
+func (d DDBHandler) CreateOrderInTable(order paymentHandler.Order) (err error) {
+	for {
+		order.Reference = generateOrderReference(4)
+		err = d.createOrderEntry(&order)
+		if _, refAlreadyExists := err.(*dynamodb.ConditionalCheckFailedException); refAlreadyExists {
+			// If we happen to generate a Reference that matches an existing one, start loop again (re-generate reference)
+			continue
+		} else {
+			// In all other cases, break from loop.
+			// If generateOrderReference was successful, err will be nil, otherwise (e.g. table doesn't exists) it will have a value
+			// the final return will return nil or the error
+			break
+		}
+	}
+	return
+}
+
+// GetConcertFromTable retrieves a specific concert from the dynamoDB table, returns a pointer to a databaseHandler.Concert struct and error (nil if successful).
+func (d DDBHandler) GetConcertFromTable(concertID string) (concert *databaseHandler.Concert, err error) {
 	concert = &databaseHandler.Concert{}
 	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.concertsTable),
 		Key: map[string]*dynamodb.AttributeValue{
 			"ID": {
 				S: aws.String(concertID),
@@ -56,7 +116,6 @@ func (d DDBHandler) GetConcertFromDatabase(concertID string) (concert *databaseH
 		},
 	})
 	if err != nil {
-		fmt.Println("Issue getting item", err.Error())
 		return
 	} else if result.Item == nil {
 		err = databaseHandler.ErrConcertDoesNotExist{Message: "Error does not exist"}
@@ -65,7 +124,6 @@ func (d DDBHandler) GetConcertFromDatabase(concertID string) (concert *databaseH
 
 	err = dynamodbattribute.UnmarshalMap(result.Item, concert)
 	if err != nil {
-		fmt.Printf("Issue unmarshalling table data, %v\n", err)
 		return
 	}
 
@@ -77,7 +135,6 @@ func (d DDBHandler) GetConcertFromDatabase(concertID string) (concert *databaseH
 	epochNow := time.Now().Unix()
 	if *concert.DateTime < epochNow {
 		err = databaseHandler.ErrConcertInPast{Message: fmt.Sprintf("Error concert %s in the past, tickets are no longer available", concertID)}
-		fmt.Println(err.Error())
 		return
 	}
 
@@ -92,8 +149,8 @@ func (d DDBHandler) GetConcertFromDatabase(concertID string) (concert *databaseH
 	return
 }
 
-// GetConcertsFromDatabase gets all upcoming concerts from the dynamoDB table
-func (d DDBHandler) GetConcertsFromDatabase() (concerts []databaseHandler.Concert, err error) {
+// GetConcertsFromTable gets all upcoming concerts from the dynamoDB table, returning a slice of databaseHandler.Concert structs and an error (nil if successful).
+func (d DDBHandler) GetConcertsFromTable() (concerts []databaseHandler.Concert, err error) {
 	epochNow := time.Now().Unix()
 	filt := expression.Name("DateTime").GreaterThan(expression.Value(epochNow))
 	expr, err := expression.NewBuilder().WithFilter(filt).Build()
@@ -102,27 +159,24 @@ func (d DDBHandler) GetConcertsFromDatabase() (concerts []databaseHandler.Concer
 	}
 
 	result, err := d.svc.Scan(&dynamodb.ScanInput{
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.concertsTable),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
 	})
 
 	if err != nil {
-		fmt.Println("Issue getting items", err.Error())
 		return
 	}
 
 	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &concerts)
 	if err != nil {
-		fmt.Printf("Issue unmarshalling table data, %v\n", err)
 		return
 	}
 
 	for _, v := range concerts {
 		if !validateConcert(&v) {
 			err = databaseHandler.ErrInvalidConcertData{Message: fmt.Sprintf("Error concert %s in the past, tickets are no longer available", v.ID)}
-			fmt.Println(err.Error())
 			return
 		}
 	}
@@ -139,3 +193,44 @@ func (d DDBHandler) GetConcertsFromDatabase() (concerts []databaseHandler.Concer
 
 	return
 }
+
+// GetOrderFromTable takes a reference id and returns an paymentHandler.Order struct, or nil if the order does not exist. The second return type is error which will be nil if successful or not nil if an error occur retriving the entry
+func (d DDBHandler) GetOrderFromTable(concertId string, ref string) (order *paymentHandler.Order, err error) {
+	order = &paymentHandler.Order{}
+	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(d.ordersTable),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ConcertId": {
+				S: aws.String(concertId),
+			},
+			"Reference": {
+				S: aws.String(ref),
+			},
+		},
+	})
+	if err != nil {
+		return
+	} else if result.Item == nil {
+		err = paymentHandler.ErrOrderDoesNotExist{Message: "Error does not exist"}
+		return
+	}
+
+	err = dynamodbattribute.UnmarshalMap(result.Item, order)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// New takes the AWS DynamoDBAPI interface, the name of the concerts and orders tables (both strings) and returns a newly created DDBHandler struct
+func New(svc dynamodbiface.DynamoDBAPI, concertsTable string, ordersTable string) DDBHandler {
+	return DDBHandler{
+		svc,
+		concertsTable,
+		ordersTable,
+	}
+}
+
+// ===============================================================================================================================
+// END OF PUBLIC FUNCTIONS
+// ===============================================================================================================================

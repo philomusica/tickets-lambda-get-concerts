@@ -26,4 +26,3 @@ type ErrInvalidConcertData struct {
 func (e ErrInvalidConcertData) Error() string {
 	return e.Message
 }
-
