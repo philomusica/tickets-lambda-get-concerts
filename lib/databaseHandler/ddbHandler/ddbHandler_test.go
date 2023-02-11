@@ -713,3 +713,49 @@ func TestGetOrderFromTableCannotUnmarshal(t *testing.T) {
 // ===============================================================================================================================
 // END NEW TESTS
 // ===============================================================================================================================
+
+// ===============================================================================================================================
+// UPDATE_TICKETS_SOLD_IN_TABLE TESTS
+// ===============================================================================================================================
+
+func TestUpdateTicketsSoldInTableResourceNotFound(t *testing.T) {
+	mockSvc := &mockDynamoDBClientConcertResourceNotFound{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateTicketsSoldInTable("1234", 4)
+
+	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T", expectedErr, err)
+	}
+}
+
+func TestUpdateTicketsSoldInTableNoConcert(t *testing.T) {
+	mockSvc := &mockDynamoDBClientNoConcert{}
+	concertID := "AAA"
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateTicketsSoldInTable(concertID, 4)
+
+	errMessage, ok := err.(databaseHandler.ErrConcertDoesNotExist)
+	if !ok {
+		t.Errorf("Expected ErrConcertDoesNotExist error, got %s\n", errMessage)
+	}
+}
+
+func TestUpdateTicketsSoldInTableCannotUnmarshal(t *testing.T) {
+	mockSvc := &mockDynamoDBClientConcertCannotUnmarshal{}
+	concertID := "AAA"
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateTicketsSoldInTable(concertID, 4)
+
+	expectedErr, ok := err.(*dynamodbattribute.UnmarshalTypeError)
+
+	if !ok {
+		t.Errorf("Expected err %s, got %s\n", expectedErr, err)
+	}
+}
+
+
+// ===============================================================================================================================
+// END UPDATE_TICKETS_SOLD_IN_TABLE TESTS
+// ===============================================================================================================================

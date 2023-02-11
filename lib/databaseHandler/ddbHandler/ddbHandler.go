@@ -231,6 +231,51 @@ func New(svc dynamodbiface.DynamoDBAPI, concertsTable string, ordersTable string
 	}
 }
 
+// UpdateTicketsSoldInTable takes the concertID and the number of tickets sold, fetches the concert from DynamoDB, then increments the ticketsSold field with the provided parameter
+func (d DDBHandler) UpdateTicketsSoldInTable(concertID string, ticketsSold uint16) (err error) {
+	concert := &databaseHandler.Concert{}
+	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(d.concertsTable),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ID": {
+				S: aws.String(concertID),
+			},
+		},
+	})
+	if err != nil {
+		return
+	} else if result.Item == nil {
+		err = databaseHandler.ErrConcertDoesNotExist{Message: "Error does not exist"}
+		return
+	}
+
+	err = dynamodbattribute.UnmarshalMap(result.Item, concert)
+	if err != nil {
+		return
+	}
+
+	ticketsSoldUpdated := *concert.TicketsSold + ticketsSold
+
+	input := &dynamodb.UpdateItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":ts": {
+				N: aws.String(fmt.Sprint(ticketsSoldUpdated)),
+			},
+		},
+		Key: map[string]*dynamodb.AttributeValue{
+			"ID": {
+				S: aws.String(concert.ID),
+			},
+		},
+		ReturnValues: aws.String("ALL_NEW"),
+		TableName: aws.String(d.concertsTable),
+		UpdateExpression: aws.String("set TicketsSold = :ts"),
+	}
+
+	_, err = d.svc.UpdateItem(input)
+	return
+}
+
 // ===============================================================================================================================
 // END OF PUBLIC FUNCTIONS
 // ===============================================================================================================================
