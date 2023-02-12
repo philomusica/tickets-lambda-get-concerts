@@ -1,13 +1,15 @@
 package cmd
 
 import (
-	"fmt"
+	//	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	"os"
+	//	"os"
 	"testing"
+	"time"
 )
 
+/*
 	func TestMain(m *testing.M) {
 		rc := m.Run()
 
@@ -21,6 +23,32 @@ import (
 		}
 		os.Exit(rc)
 	}
+*/
+var (
+	dt             int64                   = 1672599600
+	tt             uint16                  = 300
+	ts             uint16                  = 100
+	exampleConcert databaseHandler.Concert = databaseHandler.Concert{
+		ID:              "ABC",
+		Description:     "Summer Concert",
+		ImageURL:        "https://example.com/image1",
+		DateTime:        &dt,
+		TotalTickets:    &tt,
+		TicketsSold:     &ts,
+		FullPrice:       11.00,
+		ConcessionPrice: 9.00,
+	}
+	formattedConcert databaseHandler.Concert = databaseHandler.Concert{
+		ID:               "ABC",
+		Description:      "Summer Concert",
+		ImageURL:         "https://example.com/image1",
+		Date:             "Sun 1 Jan 2023",
+		Time:             "7:00pm",
+		AvailableTickets: 200,
+		FullPrice:        11.00,
+		ConcessionPrice:  9.00,
+	}
+)
 
 // ===============================================================================================================================
 // GET_CONCERT_DATA TESTS
@@ -94,17 +122,21 @@ type mockDDBHandlerGetConcertsSuccess struct {
 }
 
 func (m mockDDBHandlerGetConcertsSuccess) GetConcertsFromTable() (concerts []databaseHandler.Concert, err error) {
-	c := databaseHandler.Concert{
-		ID:               "ABC",
-		Description:      "Summer Concert",
-		ImageURL:         "https://example.com/image1",
-		Date:             "Monday 1 January 2023",
-		Time:             "7:00pm",
-		AvailableTickets: 30,
-		FullPrice:        11.00,
-		ConcessionPrice:  9.00,
-	}
+	c := exampleConcert
 	concerts = append(concerts, c)
+	return
+}
+
+func (m mockDDBHandlerGetConcertsSuccess) ReformatDateTimeAndTickets(concert *databaseHandler.Concert) (err error) {
+	t := time.Unix(*concert.DateTime, 0)
+	dateStr := t.Format("Mon 2 Jan 2006")
+	timeStr := t.Format("3:04 PM")
+	concert.Date = dateStr
+	concert.Time = timeStr
+	concert.DateTime = nil
+	concert.AvailableTickets = *concert.TotalTickets - *concert.TicketsSold
+	concert.TotalTickets = nil
+	concert.TicketsSold = nil
 	return
 }
 
@@ -117,10 +149,10 @@ func TestGetConcertDataGetConcertsSuccess(t *testing.T) {
 	response, _ := getConcertData(request, mockddbHandler)
 
 	expectedStatusCode := 200
-	expectedBody := `[{"id":"ABC","description":"Summer Concert","imageURL":"https://example.com/image1","date":"Monday 1 January 2023","time":"7:00pm","availableTickets":30,"fullPrice":11,"concessionPrice":9}]`
+	expectedBody := `[{"id":"ABC","description":"Summer Concert","imageURL":"https://example.com/image1","date":"Sun 1 Jan 2023","time":"7:00 PM","availableTickets":200,"fullPrice":11,"concessionPrice":9}]`
 
 	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
-		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
+		t.Errorf("Expected status code %d and body %s, got %d and %s\n", expectedStatusCode, expectedBody, response.StatusCode, response.Body)
 	}
 }
 
@@ -156,16 +188,20 @@ type mockDDBHandlerGetConcertSuccess struct {
 }
 
 func (m mockDDBHandlerGetConcertSuccess) GetConcertFromTable(concertId string) (concert *databaseHandler.Concert, err error) {
-	concert = &databaseHandler.Concert{
-		ID:               "ABC",
-		Description:      "Summer Concert",
-		ImageURL:         "https://example.com/image1",
-		Date:             "Monday 1 January 2023",
-		Time:             "7:00pm",
-		AvailableTickets: 30,
-		FullPrice:        11.00,
-		ConcessionPrice:  9.00,
-	}
+	concert = &exampleConcert
+	return
+}
+
+func (m mockDDBHandlerGetConcertSuccess) ReformatDateTimeAndTickets(concert *databaseHandler.Concert) (err error) {
+	t := time.Unix(*concert.DateTime, 0)
+	dateStr := t.Format("Mon 2 Jan 2006")
+	timeStr := t.Format("3:04 PM")
+	concert.Date = dateStr
+	concert.Time = timeStr
+	concert.DateTime = nil
+	concert.AvailableTickets = *concert.TotalTickets - *concert.TicketsSold
+	concert.TotalTickets = nil
+	concert.TicketsSold = nil
 	return
 }
 
@@ -186,10 +222,10 @@ func TestGetConcertDataGetConcertSuccess(t *testing.T) {
 	}
 
 	expectedStatusCode := 200
-	expectedBody := `{"id":"ABC","description":"Summer Concert","imageURL":"https://example.com/image1","date":"Monday 1 January 2023","time":"7:00pm","availableTickets":30,"fullPrice":11,"concessionPrice":9}`
+	expectedBody := `{"id":"ABC","description":"Summer Concert","imageURL":"https://example.com/image1","date":"Sun 1 Jan 2023","time":"7:00 PM","availableTickets":200,"fullPrice":11,"concessionPrice":9}`
 
 	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
-		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
+		t.Errorf("Expected status code %d and body %s, got %d and %s\n", expectedStatusCode, expectedBody, response.StatusCode, response.Body)
 	}
 }
 

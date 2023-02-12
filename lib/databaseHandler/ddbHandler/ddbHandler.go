@@ -138,14 +138,6 @@ func (d DDBHandler) GetConcertFromTable(concertID string) (concert *databaseHand
 		return
 	}
 
-	dateStr, timeStr := convertEpochSecsToDateAndTimeStrings(*concert.DateTime)
-	concert.Date = dateStr
-	concert.Time = timeStr
-	concert.DateTime = nil
-	concert.AvailableTickets = *concert.TotalTickets - *concert.TicketsSold
-	concert.TotalTickets = nil
-	concert.TicketsSold = nil
-
 	return
 }
 
@@ -179,16 +171,6 @@ func (d DDBHandler) GetConcertsFromTable() (concerts []databaseHandler.Concert, 
 			err = databaseHandler.ErrInvalidConcertData{Message: fmt.Sprintf("Error concert %s in the past, tickets are no longer available", v.ID)}
 			return
 		}
-	}
-
-	for i := 0; i < len(concerts); i++ {
-		dateStr, timeStr := convertEpochSecsToDateAndTimeStrings(*concerts[i].DateTime)
-		concerts[i].Date = dateStr
-		concerts[i].Time = timeStr
-		concerts[i].DateTime = nil
-		concerts[i].AvailableTickets = *concerts[i].TotalTickets - *concerts[i].TicketsSold
-		concerts[i].TotalTickets = nil
-		concerts[i].TicketsSold = nil
 	}
 
 	return
@@ -231,25 +213,26 @@ func New(svc dynamodbiface.DynamoDBAPI, concertsTable string, ordersTable string
 	}
 }
 
-// UpdateTicketsSoldInTable takes the concertID and the number of tickets sold, fetches the concert from DynamoDB, then increments the ticketsSold field with the provided parameter
-func (d DDBHandler) UpdateTicketsSoldInTable(concertID string, ticketsSold uint16) (err error) {
-	concert := &databaseHandler.Concert{}
-	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(d.concertsTable),
-		Key: map[string]*dynamodb.AttributeValue{
-			"ID": {
-				S: aws.String(concertID),
-			},
-		},
-	})
-	if err != nil {
-		return
-	} else if result.Item == nil {
-		err = databaseHandler.ErrConcertDoesNotExist{Message: "Error does not exist"}
+// ReformatDateTimeAndTickets takes a pointer to a databaseHandler.Concert struct, modifying it in-place to convert DateTime epoch into a date and time string, and converts num of tickets sold into num of tickets available. Returns an error if nil is passed
+func (d DDBHandler) ReformatDateTimeAndTickets(concert *databaseHandler.Concert) (err error) {
+	if concert == nil {
+		err = databaseHandler.ErrConcertDoesNotExist{Message: "Nil value passed to reformater"}
 		return
 	}
 
-	err = dynamodbattribute.UnmarshalMap(result.Item, concert)
+	dateStr, timeStr := convertEpochSecsToDateAndTimeStrings(*concert.DateTime)
+	concert.Date = dateStr
+	concert.Time = timeStr
+	concert.DateTime = nil
+	concert.AvailableTickets = *concert.TotalTickets - *concert.TicketsSold
+	concert.TotalTickets = nil
+	concert.TicketsSold = nil
+	return
+}
+
+// UpdateTicketsSoldInTable takes the concertID and the number of tickets sold, fetches the concert from DynamoDB, then increments the ticketsSold field with the provided parameter
+func (d DDBHandler) UpdateTicketsSoldInTable(concertID string, ticketsSold uint16) (err error) {
+	concert, err := d.GetConcertFromTable(concertID)
 	if err != nil {
 		return
 	}
@@ -267,8 +250,8 @@ func (d DDBHandler) UpdateTicketsSoldInTable(concertID string, ticketsSold uint1
 				S: aws.String(concert.ID),
 			},
 		},
-		ReturnValues: aws.String("ALL_NEW"),
-		TableName: aws.String(d.concertsTable),
+		ReturnValues:     aws.String("ALL_NEW"),
+		TableName:        aws.String(d.concertsTable),
 		UpdateExpression: aws.String("set TicketsSold = :ts"),
 	}
 

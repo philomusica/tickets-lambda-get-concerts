@@ -28,6 +28,12 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 		if err != nil || len(concerts) == 0 {
 			return
 		}
+		for i := 0; i < len(concerts); i++ {
+			err = dynamoHandler.ReformatDateTimeAndTickets(&concerts[i])
+			if err != nil {
+				return
+			}
+		}
 		byteArray, err = json.Marshal(&concerts)
 		if err != nil {
 			return
@@ -35,6 +41,11 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 	} else {
 		var concert *databaseHandler.Concert
 		concert, err = dynamoHandler.GetConcertFromTable(id)
+		if err != nil {
+			return
+		}
+		err = dynamoHandler.ReformatDateTimeAndTickets(concert)
+		fmt.Println(concert)
 		if err != nil {
 			return
 		}
