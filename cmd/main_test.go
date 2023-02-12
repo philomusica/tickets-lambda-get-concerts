@@ -1,29 +1,27 @@
 package cmd
 
 import (
-	//	"fmt"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	//	"os"
+	"os"
 	"testing"
 	"time"
 )
 
-/*
-	func TestMain(m *testing.M) {
-		rc := m.Run()
+func TestMain(m *testing.M) {
+	rc := m.Run()
 
-		if rc == 0 && testing.CoverMode() != "" {
-			c := testing.Coverage()
-			fmt.Println(c)
-			if c < 0.7 {
-				fmt.Printf("Tests passed but coverage was below %d%%\n", int(c*100))
-				rc = -1
-			}
+	if rc == 0 && testing.CoverMode() != "" {
+		c := testing.Coverage()
+		if c < 0.7 {
+			fmt.Printf("Tests passed but coverage was below %d%%\n", int(c*100))
+			rc = -1
 		}
-		os.Exit(rc)
 	}
-*/
+	os.Exit(rc)
+}
+
 var (
 	dt             int64                   = 1672599600
 	tt             uint16                  = 300
@@ -89,7 +87,7 @@ func (m mockDDBHandlerGetConcertsReturnsEmptyConcertsSlice) GetConcertsFromTable
 	return
 }
 
-func TestGetConcertDataCannotMarshalConcert(t *testing.T) {
+func TestGetConcertDataCannotUnmarshalConcert(t *testing.T) {
 	request := events.APIGatewayProxyRequest{}
 	t.Setenv("CONCERTS_TABLE", "concerts-table")
 	t.Setenv("ORDERS_TABLE", "orders-table")
@@ -103,17 +101,38 @@ func TestGetConcertDataCannotMarshalConcert(t *testing.T) {
 	}
 }
 
-// ===============================================================================================================================
-// HANDLER TESTS
-// ===============================================================================================================================
+type mockDDBHandlerGetConcertsReformatFails struct {
+	databaseHandler.DatabaseHandler
+}
 
-func TestHandlerEnvironmentVariablesNotSet(t *testing.T) {
+func (m mockDDBHandlerGetConcertsReformatFails) GetConcertsFromTable() (concerts []databaseHandler.Concert, err error) {
+	c := exampleConcert
+	concerts = append(concerts, c)
+	return
+}
+
+func (m mockDDBHandlerGetConcertsReformatFails) GetConcertFromTable(concertId string) (concert *databaseHandler.Concert, err error) {
+	concert = &exampleConcert
+	return
+}
+
+func (m mockDDBHandlerGetConcertsReformatFails) ReformatDateTimeAndTickets(concert *databaseHandler.Concert) (err error) {
+	err = databaseHandler.ErrConcertDoesNotExist{Message: "Nil value passed to reformater"}
+	return
+}
+
+func TestGetConcertDataReformatingConcertsFails(t *testing.T) {
 	request := events.APIGatewayProxyRequest{}
-	response, _ := Handler(request)
-	expectedStatusCode := 500
-	expectedBody := "Unable to retrieve concerts - Internal Server Error"
-	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
-		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
+	t.Setenv("CONCERTS_TABLE", "concerts-table")
+	t.Setenv("ORDERS_TABLE", "orders-table")
+
+	mockddbHandler := mockDDBHandlerGetConcertsReformatFails{}
+	_, err := getConcertData(request, mockddbHandler)
+
+	expectedErr, ok := err.(databaseHandler.ErrConcertDoesNotExist)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T\n", expectedErr, err)
 	}
 }
 
@@ -183,6 +202,25 @@ func TestGetConcertDataGetConcertFails(t *testing.T) {
 	}
 }
 
+func TestGetConcertDataReformatingConcertFails(t *testing.T) {
+	params := make(map[string]string)
+	params["id"] = "ABC"
+	request := events.APIGatewayProxyRequest{
+		QueryStringParameters: params,
+	}
+	t.Setenv("CONCERTS_TABLE", "concerts-table")
+	t.Setenv("ORDERS_TABLE", "orders-table")
+
+	mockddbHandler := mockDDBHandlerGetConcertsReformatFails{}
+	_, err := getConcertData(request, mockddbHandler)
+
+	expectedErr, ok := err.(databaseHandler.ErrConcertDoesNotExist)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T\n", expectedErr, err)
+	}
+}
+
 type mockDDBHandlerGetConcertSuccess struct {
 	databaseHandler.DatabaseHandler
 }
@@ -226,6 +264,20 @@ func TestGetConcertDataGetConcertSuccess(t *testing.T) {
 
 	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
 		t.Errorf("Expected status code %d and body %s, got %d and %s\n", expectedStatusCode, expectedBody, response.StatusCode, response.Body)
+	}
+}
+
+// ===============================================================================================================================
+// HANDLER TESTS
+// ===============================================================================================================================
+
+func TestHandlerEnvironmentVariablesNotSet(t *testing.T) {
+	request := events.APIGatewayProxyRequest{}
+	response, _ := Handler(request)
+	expectedStatusCode := 500
+	expectedBody := "Unable to retrieve concerts - Internal Server Error"
+	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
+		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
 	}
 }
 

@@ -2,7 +2,7 @@ package ddbHandler
 
 import (
 	"fmt"
-	//	"os"
+	"os"
 	"testing"
 	"time"
 
@@ -16,19 +16,18 @@ import (
 var summerEpoch int64 = 1656176400 // 25/06/22 18:00
 var winterEpoch int64 = 1671991200 // 25/12/22 18:00
 
-/*func TestMain(m *testing.M) {
+func TestMain(m *testing.M) {
 	rc := m.Run()
 
 	if rc == 0 && testing.CoverMode() != "" {
 		c := testing.Coverage()
-		fmt.Println(c)
 		if c < 0.9 {
 			fmt.Printf("Tests passed but coverage was below %d%%\n", int(c*100))
 			rc = -1
 		}
 	}
 	os.Exit(rc)
-}*/
+}
 
 // ===============================================================================================================================
 // CONVERT_EPOCH_SECS_TO_DATE_AND_TIME_STRINGS TESTS
