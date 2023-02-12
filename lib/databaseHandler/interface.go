@@ -12,9 +12,9 @@ type Concert struct {
 	DateTime         *int64  `json:"dateTime,omitempty"`
 	Date             string  `json:"date"`
 	Time             string  `json:"time"`
-	TotalTickets     *uint8  `json:"totalTickets,omitempty"`
-	TicketsSold      *uint8  `json:"ticketsSold,omitempty"`
-	AvailableTickets uint8   `json:"availableTickets"`
+	TotalTickets     *uint16 `json:"totalTickets,omitempty"`
+	TicketsSold      *uint16 `json:"ticketsSold,omitempty"`
+	AvailableTickets uint16  `json:"availableTickets"`
 	FullPrice        float32 `json:"fullPrice"`
 	ConcessionPrice  float32 `json:"concessionPrice"`
 }
@@ -24,4 +24,6 @@ type DatabaseHandler interface {
 	GetConcertFromTable(concertID string) (concert *Concert, err error)
 	GetConcertsFromTable() (concerts []Concert, err error)
 	GetOrderFromTable(concertId string, ref string) (order *paymentHandler.Order, err error)
+	ReformatDateTimeAndTickets(concert *Concert) (err error)
+	UpdateTicketsSoldInTable(concertID string, ticketsSold uint16) (err error)
 }

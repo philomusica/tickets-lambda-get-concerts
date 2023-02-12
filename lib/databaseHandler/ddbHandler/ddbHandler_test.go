@@ -2,7 +2,7 @@ package ddbHandler
 
 import (
 	"fmt"
-	//	"os"
+	"os"
 	"testing"
 	"time"
 
@@ -16,21 +16,18 @@ import (
 var summerEpoch int64 = 1656176400 // 25/06/22 18:00
 var winterEpoch int64 = 1671991200 // 25/12/22 18:00
 
-/*
-	func TestMain(m *testing.M) {
-		rc := m.Run()
+func TestMain(m *testing.M) {
+	rc := m.Run()
 
-		if rc == 0 && testing.CoverMode() != "" {
-			c := testing.Coverage()
-			fmt.Println(c)
-			if c < 0.9 {
-				fmt.Printf("Tests passed but coverage was below %d%%\n", int(c*100))
-				rc = -1
-			}
+	if rc == 0 && testing.CoverMode() != "" {
+		c := testing.Coverage()
+		if c < 0.9 {
+			fmt.Printf("Tests passed but coverage was below %d%%\n", int(c*100))
+			rc = -1
 		}
-		os.Exit(rc)
 	}
-*/
+	os.Exit(rc)
+}
 
 // ===============================================================================================================================
 // CONVERT_EPOCH_SECS_TO_DATE_AND_TIME_STRINGS TESTS
@@ -80,16 +77,16 @@ func TestConvertEpochSecsToDateAndTimeStringsTimeValueWinter(t *testing.T) {
 // ===============================================================================================================================
 // CREATE_ORDER_ENTRY TESTS
 // ===============================================================================================================================
-type mockDynamoDBCannotPut struct {
+type mockDynamoDBClientCannotPut struct {
 	dynamodbiface.DynamoDBAPI
 }
 
-func (m *mockDynamoDBCannotPut) PutItem(*dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
+func (m *mockDynamoDBClientCannotPut) PutItem(*dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
 	return nil, &dynamodb.ResourceNotFoundException{}
 }
 
 func TestCreateOrderEntryCannotPut(t *testing.T) {
-	mockSvc := &mockDynamoDBCannotPut{}
+	mockSvc := &mockDynamoDBClientCannotPut{}
 	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
 	order := paymentHandler.Order{}
 	err := dynamoHandler.createOrderEntry(&order)
@@ -269,9 +266,6 @@ func TestGetConcertFromTableSuccess(t *testing.T) {
 
 	if concert.ID != concertID {
 		t.Errorf("Expected entry with ID %s, got %s\n", concertID, concert.ID)
-	}
-	if concert.DateTime != nil || concert.TotalTickets != nil || concert.TicketsSold != nil {
-		t.Error("DateTime, TotalTikets and TicketsSold should all be nil")
 	}
 }
 
@@ -548,12 +542,6 @@ func TestGetConcertsFromTableSuccessful(t *testing.T) {
 	if concerts[1].Description != secondConcertDescription {
 		t.Errorf("Expected second concert returned to be %s, got %s\n", secondConcertDescription, concerts[1].Description)
 	}
-
-	for _, v := range concerts {
-		if v.DateTime != nil || v.TotalTickets != nil || v.TicketsSold != nil {
-			t.Error("DateTime, TotalTikets and TicketsSold should all be nil")
-		}
-	}
 }
 
 func TestGetConcertsFromTableNoConcerts(t *testing.T) {
@@ -714,4 +702,183 @@ func TestGetOrderFromTableCannotUnmarshal(t *testing.T) {
 
 // ===============================================================================================================================
 // END NEW TESTS
+// ===============================================================================================================================
+
+// ===============================================================================================================================
+// REFORMAT_DATE_TIME_AND_TICKETS TESTS
+// ===============================================================================================================================
+
+func TestReformatDateTimeAndTicketsNilConcert(t *testing.T) {
+	mockSvc := &mockDynamoDBClientConcertSuccess{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.ReformatDateTimeAndTickets(nil)
+	expectedErr, ok := err.(databaseHandler.ErrConcertDoesNotExist)
+	if !ok {
+		t.Errorf("Expected error of type %T, go %T\n", expectedErr, err)
+	}
+}
+
+func TestReformatDateTimeAndTicketsSuccess(t *testing.T) {
+	mockSvc := &mockDynamoDBClientConcertSuccess{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	var dT int64 = summerEpoch
+	var tt uint16 = 300
+	var ts uint16 = 100
+	concert := databaseHandler.Concert{
+		ID:              "ABC",
+		Description:     "Summer Concert",
+		ImageURL:        "http://example.com/image.jpg",
+		DateTime:        &dT,
+		TotalTickets:    &tt,
+		TicketsSold:     &ts,
+		FullPrice:       12.0,
+		ConcessionPrice: 10.0,
+	}
+	err := dynamoHandler.ReformatDateTimeAndTickets(&concert)
+
+	if err != nil {
+		t.Errorf("Expected nil error, got %T", err)
+	}
+
+	if concert.AvailableTickets != 200 {
+		t.Errorf("Expected available tickets to be calculated to 200, got %d\n", concert.AvailableTickets)
+	}
+
+	if concert.DateTime != nil || concert.TotalTickets != nil || concert.TicketsSold != nil {
+		t.Errorf("Expected DateTime, TotalTickets and TicketsSold to all be nil\n")
+	}
+}
+
+// ===============================================================================================================================
+// END REFORMAT_DATE_TIME_AND_TICKETS TESTS
+// ===============================================================================================================================
+
+// ===============================================================================================================================
+// UPDATE_TICKETS_SOLD_IN_TABLE TESTS
+// ===============================================================================================================================
+
+func TestUpdateTicketsSoldInTableResourceNotFound(t *testing.T) {
+	mockSvc := &mockDynamoDBClientConcertResourceNotFound{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateTicketsSoldInTable("1234", 4)
+
+	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T", expectedErr, err)
+	}
+}
+
+func TestUpdateTicketsSoldInTableNoConcert(t *testing.T) {
+	mockSvc := &mockDynamoDBClientNoConcert{}
+	concertID := "AAA"
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateTicketsSoldInTable(concertID, 4)
+
+	errMessage, ok := err.(databaseHandler.ErrConcertDoesNotExist)
+	if !ok {
+		t.Errorf("Expected ErrConcertDoesNotExist error, got %s\n", errMessage)
+	}
+}
+
+func TestUpdateTicketsSoldInTableCannotUnmarshal(t *testing.T) {
+	mockSvc := &mockDynamoDBClientConcertCannotUnmarshal{}
+	concertID := "AAA"
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateTicketsSoldInTable(concertID, 4)
+
+	expectedErr, ok := err.(*dynamodbattribute.UnmarshalTypeError)
+
+	if !ok {
+		t.Errorf("Expected err %s, got %s\n", expectedErr, err)
+	}
+}
+
+type mockDynamoDBClientUpdateConcertsFails struct {
+	dynamodbiface.DynamoDBAPI
+}
+
+func (m *mockDynamoDBClientUpdateConcertsFails) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
+	epochTomorrow := time.Now().AddDate(0, 0, 1).Unix()
+	output = &dynamodb.GetItemOutput{}
+	item := map[string]*dynamodb.AttributeValue{}
+	item["ID"] = &dynamodb.AttributeValue{}
+	item["ID"].SetS("AAA")
+	item["Description"] = &dynamodb.AttributeValue{}
+	item["Description"].SetS("Summer Concert")
+	item["ImageURL"] = &dynamodb.AttributeValue{}
+	item["ImageURL"].SetS("http://example.com/image.jpg")
+	item["DateTime"] = &dynamodb.AttributeValue{}
+	item["DateTime"].SetN(fmt.Sprint(epochTomorrow))
+	item["TotalTickets"] = &dynamodb.AttributeValue{}
+	item["TotalTickets"].SetN(fmt.Sprint(250))
+	item["TicketsSold"] = &dynamodb.AttributeValue{}
+	item["TicketsSold"].SetN(fmt.Sprint(50))
+	item["FullPrice"] = &dynamodb.AttributeValue{}
+	item["FullPrice"].SetN(fmt.Sprint(12.00))
+	item["ConcessionPrice"] = &dynamodb.AttributeValue{}
+	item["ConcessionPrice"].SetN(fmt.Sprint(10.00))
+	output.SetItem(item)
+	return
+}
+
+func (m *mockDynamoDBClientUpdateConcertsFails) UpdateItem(input *dynamodb.UpdateItemInput) (output *dynamodb.UpdateItemOutput, err error) {
+	err = &dynamodb.ResourceNotFoundException{}
+	return
+}
+
+func TestUpdateTicketsSoldInTableUpdateFails(t *testing.T) {
+	mockSvc := &mockDynamoDBClientUpdateConcertsFails{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateTicketsSoldInTable("ABC", 4)
+	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T\n", expectedErr, err)
+	}
+}
+
+type mockDynamoDBClientUpdateConcertsSuccess struct {
+	dynamodbiface.DynamoDBAPI
+}
+
+func (m *mockDynamoDBClientUpdateConcertsSuccess) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
+	epochTomorrow := time.Now().AddDate(0, 0, 1).Unix()
+	output = &dynamodb.GetItemOutput{}
+	item := map[string]*dynamodb.AttributeValue{}
+	item["ID"] = &dynamodb.AttributeValue{}
+	item["ID"].SetS("AAA")
+	item["Description"] = &dynamodb.AttributeValue{}
+	item["Description"].SetS("Summer Concert")
+	item["ImageURL"] = &dynamodb.AttributeValue{}
+	item["ImageURL"].SetS("http://example.com/image.jpg")
+	item["DateTime"] = &dynamodb.AttributeValue{}
+	item["DateTime"].SetN(fmt.Sprint(epochTomorrow))
+	item["TotalTickets"] = &dynamodb.AttributeValue{}
+	item["TotalTickets"].SetN(fmt.Sprint(250))
+	item["TicketsSold"] = &dynamodb.AttributeValue{}
+	item["TicketsSold"].SetN(fmt.Sprint(50))
+	item["FullPrice"] = &dynamodb.AttributeValue{}
+	item["FullPrice"].SetN(fmt.Sprint(12.00))
+	item["ConcessionPrice"] = &dynamodb.AttributeValue{}
+	item["ConcessionPrice"].SetN(fmt.Sprint(10.00))
+	output.SetItem(item)
+	return
+}
+
+func (m *mockDynamoDBClientUpdateConcertsSuccess) UpdateItem(input *dynamodb.UpdateItemInput) (output *dynamodb.UpdateItemOutput, err error) {
+	return
+}
+
+func TestUpdateTicketsSoldInTableUpdateSuccess(t *testing.T) {
+	mockSvc := &mockDynamoDBClientUpdateConcertsSuccess{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateTicketsSoldInTable("ABC", 4)
+	if err != nil {
+		t.Errorf("Expected nil error, got %T\n", err)
+	}
+}
+
+// ===============================================================================================================================
+// END UPDATE_TICKETS_SOLD_IN_TABLE TESTS
 // ===============================================================================================================================
