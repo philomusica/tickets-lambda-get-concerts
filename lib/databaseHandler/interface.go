@@ -7,8 +7,9 @@ import (
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
 type Concert struct {
 	ID               string  `json:"id"`
-	Description      string  `json:"description"`
+	Title            string  `json:"title"`
 	ImageURL         string  `json:"imageURL"`
+	Location         string  `json:"location"`
 	DateTime         *int64  `json:"dateTime,omitempty"`
 	Date             string  `json:"date"`
 	Time             string  `json:"time"`

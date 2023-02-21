@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 )
 
 func TestMain(m *testing.M) {
@@ -27,22 +28,16 @@ var (
 	tt             uint16                  = 300
 	ts             uint16                  = 100
 	exampleConcert databaseHandler.Concert = databaseHandler.Concert{
-		ID:              "ABC",
-		Description:     "Summer Concert",
-		ImageURL:        "https://example.com/image1",
-		DateTime:        &dt,
-		TotalTickets:    &tt,
-		TicketsSold:     &ts,
-		FullPrice:       11.00,
-		ConcessionPrice: 9.00,
-	}
-	formattedConcert databaseHandler.Concert = databaseHandler.Concert{
 		ID:               "ABC",
-		Description:      "Summer Concert",
+		Title:            "Summer Concert",
 		ImageURL:         "https://example.com/image1",
-		Date:             "Sun 1 Jan 2023",
-		Time:             "7:00pm",
-		AvailableTickets: 200,
+		Location:         "Holy Trinity, Longlevens, GL2 0AJ",
+		DateTime:         &dt,
+		Date:             "",
+		Time:             "",
+		TotalTickets:     &tt,
+		TicketsSold:      &ts,
+		AvailableTickets: 0,
 		FullPrice:        11.00,
 		ConcessionPrice:  9.00,
 	}
@@ -168,7 +163,7 @@ func TestGetConcertDataGetConcertsSuccess(t *testing.T) {
 	response, _ := getConcertData(request, mockddbHandler)
 
 	expectedStatusCode := 200
-	expectedBody := `[{"id":"ABC","description":"Summer Concert","imageURL":"https://example.com/image1","date":"Sun 1 Jan 2023","time":"7:00 PM","availableTickets":200,"fullPrice":11,"concessionPrice":9}]`
+	expectedBody := `[{"id":"ABC","title":"Summer Concert","imageURL":"https://example.com/image1","location":"Holy Trinity, Longlevens, GL2 0AJ","date":"Sun 1 Jan 2023","time":"7:00 PM","availableTickets":200,"fullPrice":11,"concessionPrice":9}]`
 
 	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
 		t.Errorf("Expected status code %d and body %s, got %d and %s\n", expectedStatusCode, expectedBody, response.StatusCode, response.Body)
@@ -260,7 +255,7 @@ func TestGetConcertDataGetConcertSuccess(t *testing.T) {
 	}
 
 	expectedStatusCode := 200
-	expectedBody := `{"id":"ABC","description":"Summer Concert","imageURL":"https://example.com/image1","date":"Sun 1 Jan 2023","time":"7:00 PM","availableTickets":200,"fullPrice":11,"concessionPrice":9}`
+	expectedBody := `{"id":"ABC","title":"Summer Concert","imageURL":"https://example.com/image1","location":"Holy Trinity, Longlevens, GL2 0AJ","date":"Sun 1 Jan 2023","time":"7:00 PM","availableTickets":200,"fullPrice":11,"concessionPrice":9}`
 
 	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
 		t.Errorf("Expected status code %d and body %s, got %d and %s\n", expectedStatusCode, expectedBody, response.StatusCode, response.Body)

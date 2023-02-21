@@ -190,8 +190,8 @@ func (m *mockDynamoDBClientConcertSuccess) Scan(input *dynamodb.ScanInput) (outp
 	item1 := map[string]*dynamodb.AttributeValue{}
 	item1["ID"] = &dynamodb.AttributeValue{}
 	item1["ID"].SetS("AAA")
-	item1["Description"] = &dynamodb.AttributeValue{}
-	item1["Description"].SetS("Summer Concert")
+	item1["Title"] = &dynamodb.AttributeValue{}
+	item1["Title"].SetS("Summer Concert")
 	item1["ImageURL"] = &dynamodb.AttributeValue{}
 	item1["ImageURL"].SetS("http://example.com/image.jpg")
 	item1["DateTime"] = &dynamodb.AttributeValue{}
@@ -208,8 +208,8 @@ func (m *mockDynamoDBClientConcertSuccess) Scan(input *dynamodb.ScanInput) (outp
 	item2 := map[string]*dynamodb.AttributeValue{}
 	item2["ID"] = &dynamodb.AttributeValue{}
 	item2["ID"].SetS("BBB")
-	item2["Description"] = &dynamodb.AttributeValue{}
-	item2["Description"].SetS("Winter Concert")
+	item2["Title"] = &dynamodb.AttributeValue{}
+	item2["Title"].SetS("Winter Concert")
 	item2["ImageURL"] = &dynamodb.AttributeValue{}
 	item2["ImageURL"].SetS("http://example.com/image2.jpg")
 	item2["DateTime"] = &dynamodb.AttributeValue{}
@@ -237,8 +237,8 @@ func (m *mockDynamoDBClientConcertSuccess) GetItem(*dynamodb.GetItemInput) (*dyn
 	item := map[string]*dynamodb.AttributeValue{}
 	item["ID"] = &dynamodb.AttributeValue{}
 	item["ID"].SetS("AAA")
-	item["Description"] = &dynamodb.AttributeValue{}
-	item["Description"].SetS("Summer Concert")
+	item["Title"] = &dynamodb.AttributeValue{}
+	item["Title"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
 	item["DateTime"] = &dynamodb.AttributeValue{}
@@ -341,8 +341,8 @@ func (m *mockDynamoDBClientConcertInvalidData) GetItem(*dynamodb.GetItemInput) (
 	item := map[string]*dynamodb.AttributeValue{}
 	item["ID"] = &dynamodb.AttributeValue{}
 	item["ID"].SetS("AAA")
-	item["Description"] = &dynamodb.AttributeValue{}
-	item["Description"].SetS("Summer Concert")
+	item["Title"] = &dynamodb.AttributeValue{}
+	item["Title"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
 	item["DateTime"] = &dynamodb.AttributeValue{}
@@ -361,8 +361,8 @@ func (m *mockDynamoDBClientConcertInvalidData) Scan(input *dynamodb.ScanInput) (
 	item1 := map[string]*dynamodb.AttributeValue{}
 	item1["ID"] = &dynamodb.AttributeValue{}
 	item1["ID"].SetS("AAA")
-	item1["Description"] = &dynamodb.AttributeValue{}
-	item1["Description"].SetS("Summer Concert")
+	item1["Title"] = &dynamodb.AttributeValue{}
+	item1["Title"].SetS("Summer Concert")
 	item1["ImageURL"] = &dynamodb.AttributeValue{}
 	item1["ImageURL"].SetS("http://example.com/image.jpg")
 	item1["DateTime"] = &dynamodb.AttributeValue{}
@@ -379,8 +379,8 @@ func (m *mockDynamoDBClientConcertInvalidData) Scan(input *dynamodb.ScanInput) (
 	item2 := map[string]*dynamodb.AttributeValue{}
 	item2["ID"] = &dynamodb.AttributeValue{}
 	item2["ID"].SetS("BBB")
-	item2["Description"] = &dynamodb.AttributeValue{}
-	item2["Description"].SetS("Winter Concert")
+	item2["Title"] = &dynamodb.AttributeValue{}
+	item2["Title"].SetS("Winter Concert")
 	item2["ImageURL"] = &dynamodb.AttributeValue{}
 	item2["ImageURL"].SetS("http://example.com/image2.jpg")
 	item2["TotalTickets"] = &dynamodb.AttributeValue{}
@@ -421,8 +421,8 @@ func (m *mockDynamoDBClientOldConcert) GetItem(*dynamodb.GetItemInput) (*dynamod
 	item := map[string]*dynamodb.AttributeValue{}
 	item["ID"] = &dynamodb.AttributeValue{}
 	item["ID"].SetS("AAA")
-	item["Description"] = &dynamodb.AttributeValue{}
-	item["Description"].SetS("Summer Concert")
+	item["Title"] = &dynamodb.AttributeValue{}
+	item["Title"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
 	item["DateTime"] = &dynamodb.AttributeValue{}
@@ -461,8 +461,8 @@ func (m *mockDynamoDBClientConcertCannotUnmarshal) GetItem(*dynamodb.GetItemInpu
 	item := map[string]*dynamodb.AttributeValue{}
 	item["ID"] = &dynamodb.AttributeValue{}
 	item["ID"].SetS("AAA")
-	item["Description"] = &dynamodb.AttributeValue{}
-	item["Description"].SetS("Summer Concert")
+	item["Title"] = &dynamodb.AttributeValue{}
+	item["Title"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
 	item["DateTime"] = &dynamodb.AttributeValue{}
@@ -475,16 +475,16 @@ func (m *mockDynamoDBClientConcertCannotUnmarshal) Scan(input *dynamodb.ScanInpu
 	numConcerts := 2
 	items := make([]map[string]*dynamodb.AttributeValue, 0, numConcerts)
 	item1 := map[string]*dynamodb.AttributeValue{}
-	item1["Description"] = &dynamodb.AttributeValue{}
-	item1["Description"].SetS("Summer Concert")
+	item1["Title"] = &dynamodb.AttributeValue{}
+	item1["Title"].SetS("Summer Concert")
 	item1["ImageURL"] = &dynamodb.AttributeValue{}
 	item1["ImageURL"].SetS("http://example.com/image.jpg")
 	item1["DateTime"] = &dynamodb.AttributeValue{}
 	item1["DateTime"].SetS("Hello")
 	items = append(items, item1)
 	item2 := map[string]*dynamodb.AttributeValue{}
-	item2["Description"] = &dynamodb.AttributeValue{}
-	item2["Description"].SetS("Winter Concert")
+	item2["Title"] = &dynamodb.AttributeValue{}
+	item2["Title"].SetS("Winter Concert")
 	item2["ImageURL"] = &dynamodb.AttributeValue{}
 	item2["ImageURL"].SetS("http://example.com/image2.jpg")
 	item2["DateTime"] = &dynamodb.AttributeValue{}
@@ -532,15 +532,15 @@ func TestGetConcertsFromTableSuccessful(t *testing.T) {
 		t.Errorf("Expected %d concerts returned, got %d\n", expectedNumConcerts, len(concerts))
 	}
 
-	firstConcertDescription := "Summer Concert"
-	secondConcertDescription := "Winter Concert"
+	firstConcertTitle := "Summer Concert"
+	secondConcertTitle := "Winter Concert"
 
-	if concerts[0].Description != firstConcertDescription {
-		t.Errorf("Expected first concert returned to be %s, got %s\n", firstConcertDescription, concerts[0].Description)
+	if concerts[0].Title != firstConcertTitle {
+		t.Errorf("Expected first concert returned to be %s, got %s\n", firstConcertTitle, concerts[0].Title)
 	}
 
-	if concerts[1].Description != secondConcertDescription {
-		t.Errorf("Expected second concert returned to be %s, got %s\n", secondConcertDescription, concerts[1].Description)
+	if concerts[1].Title != secondConcertTitle {
+		t.Errorf("Expected second concert returned to be %s, got %s\n", secondConcertTitle, concerts[1].Title)
 	}
 }
 
@@ -726,7 +726,7 @@ func TestReformatDateTimeAndTicketsSuccess(t *testing.T) {
 	var ts uint16 = 100
 	concert := databaseHandler.Concert{
 		ID:              "ABC",
-		Description:     "Summer Concert",
+		Title:           "Summer Concert",
 		ImageURL:        "http://example.com/image.jpg",
 		DateTime:        &dT,
 		TotalTickets:    &tt,
@@ -804,8 +804,8 @@ func (m *mockDynamoDBClientUpdateConcertsFails) GetItem(input *dynamodb.GetItemI
 	item := map[string]*dynamodb.AttributeValue{}
 	item["ID"] = &dynamodb.AttributeValue{}
 	item["ID"].SetS("AAA")
-	item["Description"] = &dynamodb.AttributeValue{}
-	item["Description"].SetS("Summer Concert")
+	item["Title"] = &dynamodb.AttributeValue{}
+	item["Title"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
 	item["DateTime"] = &dynamodb.AttributeValue{}
@@ -848,8 +848,8 @@ func (m *mockDynamoDBClientUpdateConcertsSuccess) GetItem(input *dynamodb.GetIte
 	item := map[string]*dynamodb.AttributeValue{}
 	item["ID"] = &dynamodb.AttributeValue{}
 	item["ID"].SetS("AAA")
-	item["Description"] = &dynamodb.AttributeValue{}
-	item["Description"].SetS("Summer Concert")
+	item["Title"] = &dynamodb.AttributeValue{}
+	item["Title"].SetS("Summer Concert")
 	item["ImageURL"] = &dynamodb.AttributeValue{}
 	item["ImageURL"].SetS("http://example.com/image.jpg")
 	item["DateTime"] = &dynamodb.AttributeValue{}
