@@ -58,7 +58,7 @@ func (d DDBHandler) createOrderEntry(order *paymentHandler.Order) (err error) {
 func generateOrderReference(size uint8) string {
 	charSet := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 	rand.Seed(time.Now().UnixNano())
-	arr := make([]byte, size, size)
+	arr := make([]byte, size)
 	var i uint8
 	for i = 0; i < size; i++ {
 		arr[i] = charSet[rand.Intn(len(charSet))]
@@ -70,7 +70,7 @@ func generateOrderReference(size uint8) string {
 func validateConcert(c *databaseHandler.Concert) (valid bool) {
 	valid = false
 
-	if c.ID != "" && c.Description != "" && c.ImageURL != "" &&
+	if c.ID != "" && c.Title != "" && c.ImageURL != "" &&
 		c.DateTime != nil && *c.DateTime > 0 && c.TotalTickets != nil && *c.TotalTickets > 0 &&
 		c.TicketsSold != nil && c.FullPrice > 0.0 && c.ConcessionPrice > 0.0 {
 		valid = true
