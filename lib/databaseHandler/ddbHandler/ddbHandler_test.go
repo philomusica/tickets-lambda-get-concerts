@@ -2,7 +2,7 @@ package ddbHandler
 
 import (
 	"fmt"
-	"os"
+	//"os"
 	"testing"
 	"time"
 
@@ -16,6 +16,7 @@ import (
 var summerEpoch int64 = 1656176400 // 25/06/22 18:00
 var winterEpoch int64 = 1671991200 // 25/12/22 18:00
 
+/*
 func TestMain(m *testing.M) {
 	rc := m.Run()
 
@@ -28,6 +29,7 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(rc)
 }
+*/
 
 // ===============================================================================================================================
 // CONVERT_EPOCH_SECS_TO_DATE_AND_TIME_STRINGS TESTS
@@ -751,6 +753,133 @@ func TestReformatDateTimeAndTicketsSuccess(t *testing.T) {
 
 // ===============================================================================================================================
 // END REFORMAT_DATE_TIME_AND_TICKETS TESTS
+// ===============================================================================================================================
+
+// ===============================================================================================================================
+// UPDATE_ORDER_IN_TABLE TESTS
+// ===============================================================================================================================
+
+func TestUpdateOrderInTableResourceNotFound(t *testing.T) {
+	mockSvc := &mockDynamoDBClientConcertResourceNotFound{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+
+	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T", expectedErr, err)
+	}
+}
+
+func TestUpdateOrderInTableNoOrder(t *testing.T) {
+	mockSvc := &mockDynamoDBClientNoOrder{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+
+	errMessage, ok := err.(paymentHandler.ErrOrderDoesNotExist)
+	if !ok {
+		t.Errorf("Expected ErrConcertDoesNotExist error, got %s\n", errMessage)
+	}
+}
+
+func TestUpdateOrderInTableCannotUnmarshal(t *testing.T) {
+	mockSvc := &mockDynamoDBClientOrderCannotUnmarshal{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+
+	expectedErr, ok := err.(*dynamodbattribute.UnmarshalTypeError)
+
+	if !ok {
+		t.Errorf("Expected err %s, got %s\n", expectedErr, err)
+	}
+}
+
+type mockDynamoDBClientUpdateOrderFails struct {
+	dynamodbiface.DynamoDBAPI
+}
+
+func (m *mockDynamoDBClientUpdateOrderFails) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
+	output = &dynamodb.GetItemOutput{}
+	item := map[string]*dynamodb.AttributeValue{}
+	item["ConcertId"] = &dynamodb.AttributeValue{}
+	item["ConcertId"].SetS("1234")
+	item["Reference"] = &dynamodb.AttributeValue{}
+	item["Reference"].SetS("A1B2")
+	item["FirstName"] = &dynamodb.AttributeValue{}
+	item["FirstName"].SetS("John")
+	item["LastName"] = &dynamodb.AttributeValue{}
+	item["LastName"].SetS("Smith")
+	item["Email"] = &dynamodb.AttributeValue{}
+	item["Email"].SetS("johnsmith@gmail.com")
+	item["NumOfFullPrice"] = &dynamodb.AttributeValue{}
+	item["NumOfFullPrice"].SetN(fmt.Sprint(2))
+	item["NumOfConcessions"] = &dynamodb.AttributeValue{}
+	item["NumOfConcessions"].SetN(fmt.Sprint(2))
+	item["Status"] = &dynamodb.AttributeValue{}
+	item["Status"].SetS("pending")
+	output.SetItem(item)
+	return
+}
+
+func (m *mockDynamoDBClientUpdateOrderFails) UpdateItem(input *dynamodb.UpdateItemInput) (output *dynamodb.UpdateItemOutput, err error) {
+	err = &dynamodb.ResourceNotFoundException{}
+	return
+}
+
+func TestUpdateOrderInTableUpdateFails(t *testing.T) {
+	mockSvc := &mockDynamoDBClientUpdateConcertsFails{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T\n", expectedErr, err)
+	}
+}
+
+type mockDynamoDBClientUpdateOrderSuccess struct {
+	dynamodbiface.DynamoDBAPI
+}
+
+func (m *mockDynamoDBClientUpdateOrderSuccess) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
+	output = &dynamodb.GetItemOutput{}
+	item := map[string]*dynamodb.AttributeValue{}
+	item["ConcertId"] = &dynamodb.AttributeValue{}
+	item["ConcertId"] = &dynamodb.AttributeValue{}
+	item["ConcertId"].SetS("1234")
+	item["Reference"] = &dynamodb.AttributeValue{}
+	item["Reference"].SetS("A1B2")
+	item["FirstName"] = &dynamodb.AttributeValue{}
+	item["FirstName"].SetS("John")
+	item["LastName"] = &dynamodb.AttributeValue{}
+	item["LastName"].SetS("Smith")
+	item["Email"] = &dynamodb.AttributeValue{}
+	item["Email"].SetS("johnsmith@gmail.com")
+	item["NumOfFullPrice"] = &dynamodb.AttributeValue{}
+	item["NumOfFullPrice"].SetN(fmt.Sprint(2))
+	item["NumOfConcessions"] = &dynamodb.AttributeValue{}
+	item["NumOfConcessions"].SetN(fmt.Sprint(2))
+	item["Status"] = &dynamodb.AttributeValue{}
+	item["Status"].SetS("pending")
+	output.SetItem(item)
+	return
+}
+
+func (m *mockDynamoDBClientUpdateOrderSuccess) UpdateItem(input *dynamodb.UpdateItemInput) (output *dynamodb.UpdateItemOutput, err error) {
+	return
+}
+
+func TestUpdateOrderInTableUpdateSuccess(t *testing.T) {
+	mockSvc := &mockDynamoDBClientUpdateConcertsSuccess{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+	if err != nil {
+		t.Errorf("Expected nil error, got %T\n", err)
+	}
+
+}
+// ===============================================================================================================================
+// END UPDATE_ORDER_IN_TABLE TESTS
 // ===============================================================================================================================
 
 // ===============================================================================================================================

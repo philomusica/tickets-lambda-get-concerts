@@ -230,6 +230,33 @@ func (d DDBHandler) ReformatDateTimeAndTickets(concert *databaseHandler.Concert)
 	return
 }
 
+// UpdateOrderInTable takes a concertID and payment reference and new status value, fetches the order from DynamoDB, and updates the order with the new status value. Returns an error if unsuccessful, or nil if successful
+func (d DDBHandler) UpdateOrderInTable(concertID string, reference string, newStatus string) (err error) {
+	order, err := d.GetOrderFromTable(concertID, reference)
+	if err != nil || order == nil {
+		return
+	}
+
+	input := &dynamodb.UpdateItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":ns": {
+				S: aws.String(newStatus),
+			},
+		},
+		Key: map[string]*dynamodb.AttributeValue{
+			"ConcertId": {
+				S: aws.String(concertID),
+			},
+			"Reference": {
+				S: aws.String(reference),
+			},
+		},
+	}
+
+	_, err = d.svc.UpdateItem(input)
+	return
+}
+
 // UpdateTicketsSoldInTable takes the concertID and the number of tickets sold, fetches the concert from DynamoDB, then increments the ticketsSold field with the provided parameter
 func (d DDBHandler) UpdateTicketsSoldInTable(concertID string, ticketsSold uint16) (err error) {
 	concert, err := d.GetConcertFromTable(concertID)

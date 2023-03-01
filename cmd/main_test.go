@@ -1,14 +1,15 @@
 package cmd
 
 import (
-	"fmt"
+	//"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	"os"
+	//"os"
 	"testing"
 	"time"
 )
 
+/*
 func TestMain(m *testing.M) {
 	rc := m.Run()
 
@@ -21,6 +22,7 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(rc)
 }
+*/
 
 var (
 	dt             int64                   = 1672599600

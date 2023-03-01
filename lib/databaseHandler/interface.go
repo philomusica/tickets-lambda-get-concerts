@@ -25,5 +25,6 @@ type DatabaseHandler interface {
 	GetConcertsFromTable() (concerts []Concert, err error)
 	GetOrderFromTable(concertId string, ref string) (order *paymentHandler.Order, err error)
 	ReformatDateTimeAndTickets(concert *Concert) (err error)
+	UpdateOrderInTable(concertID string, reference string, newStatus string) (err error)
 	UpdateTicketsSoldInTable(concertID string, ticketsSold uint16) (err error)
 }

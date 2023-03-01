@@ -24,6 +24,8 @@ github.com/aws/aws-sdk-go v1.44.194 h1:1ZDK+QDcc5oRbZGgRZSz561eR8XVizXCeGpoZKo33
 github.com/aws/aws-sdk-go v1.44.194/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/aws/aws-sdk-go v1.44.195 h1:d5xFL0N83Fpsq2LFiHgtBUHknCRUPGHdOlCWt/jtOJs=
 github.com/aws/aws-sdk-go v1.44.195/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
+github.com/aws/aws-sdk-go v1.44.212 h1:IRstlErdeKeQ8qBsCwWt4MG2RihUOcUJVqYwbvqpE28=
+github.com/aws/aws-sdk-go v1.44.212/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
@@ -38,6 +40,8 @@ github.com/philomusica/tickets-lambda-process-payment v1.2.2 h1:c80UVhTmj+jYANnS
 github.com/philomusica/tickets-lambda-process-payment v1.2.2/go.mod h1:yqT03aUjfgdwyPNZ2L/9GByPcUxZVauiXaaLxi5cLOY=
 github.com/philomusica/tickets-lambda-process-payment v1.2.3 h1:aOvk5Oo+yGDBYDo6aLOqIiezBwkbieZfG1Hj0VSNf/w=
 github.com/philomusica/tickets-lambda-process-payment v1.2.3/go.mod h1:yqT03aUjfgdwyPNZ2L/9GByPcUxZVauiXaaLxi5cLOY=
+github.com/philomusica/tickets-lambda-process-payment v1.2.4 h1:nvcR7+F6brdLUxRtZOLeUhUhwT8+kZZSLIudyKrFrdg=
+github.com/philomusica/tickets-lambda-process-payment v1.2.4/go.mod h1:IeRC90Zy0SerTd5Lw5pvlZ57PVZvAYSiEup7nll58KY=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
