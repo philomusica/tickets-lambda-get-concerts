@@ -81,7 +81,7 @@ func (d DDBHandler) CreateOrderInTable(order paymentHandler.Order) (err error) {
 	_, err = d.svc.PutItem(&dynamodb.PutItemInput{
 		TableName:           aws.String(d.ordersTable),
 		Item:                av,
-		ConditionExpression: aws.String("attribute_not_exists(Reference) AND attribute_not_exists(ConcertId)"),
+		ConditionExpression: aws.String("attribute_not_exists(Reference) AND attribute_not_exists(ConcertID)"),
 	})
 	return
 }
@@ -179,7 +179,7 @@ func (d DDBHandler) GetOrderFromTable(concertId string, ref string) (order *paym
 			"Reference": {
 				S: aws.String(ref),
 			},
-			"ConcertId": {
+			"ConcertID": {
 				S: aws.String(concertId),
 			},
 		},
@@ -263,7 +263,7 @@ func (d DDBHandler) UpdateOrderInTable(concertID string, reference string, newSt
 			"Reference": {
 				S: aws.String(reference),
 			},
-			"ConcertId": {
+			"ConcertID": {
 				S: aws.String(concertID),
 			},
 		},
