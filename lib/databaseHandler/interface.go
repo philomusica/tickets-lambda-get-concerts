@@ -22,9 +22,11 @@ type Concert struct {
 
 type DatabaseHandler interface {
 	CreateOrderInTable(order paymentHandler.Order) (err error)
+	GenerateOrderReference(size uint8) (ref string)
 	GetConcertFromTable(concertID string) (concert *Concert, err error)
 	GetConcertsFromTable() (concerts []Concert, err error)
 	GetOrderFromTable(concertId string, ref string) (order *paymentHandler.Order, err error)
+	GetOrdersByOrderReferenceFromTable(ref string) (orders []paymentHandler.Order, err error)
 	ReformatDateTimeAndTickets(concert *Concert) (err error)
 	UpdateOrderInTable(concertID string, reference string, newStatus string) (err error)
 	UpdateTicketsSoldInTable(concertID string, ticketsSold uint16) (err error)

@@ -39,23 +39,8 @@ func convertEpochSecsToDateAndTimeStrings(dateTime int64) (date string, timeStam
 	return
 }
 
-// createOrderEntry is a private method on the DDBHandler struct which takes a pointer to the paymentHandler.Order struct and attempts to write it the dynamodb table. Method returns an error (nil if successful)
-func (d DDBHandler) createOrderEntry(order *paymentHandler.Order) (err error) {
-	av, err := dynamodbattribute.MarshalMap(order)
-	if err != nil {
-		return
-	}
-
-	_, err = d.svc.PutItem(&dynamodb.PutItemInput{
-		TableName:           aws.String(d.ordersTable),
-		Item:                av,
-		ConditionExpression: aws.String("attribute_not_exists(ConcertId) AND attribute_not_exists(Reference)"),
-	})
-	return
-}
-
-// generateOrderReference takes a uint8 indicating the num of random characters to generate, and returns the random in the form of a string
-func generateOrderReference(size uint8) string {
+// generateRandomString takes a uint8 indicating the num of random characters to generate, and returns the random in the form of a string
+func generateRandomString(size uint8) string {
 	charSet := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 	rand.Seed(time.Now().UnixNano())
 	arr := make([]byte, size)
@@ -88,16 +73,25 @@ func validateConcert(c *databaseHandler.Concert) (valid bool) {
 
 // CreateOrderInTable takes the paymentRequest struct, generates a new payment references, checks for uniqueness and creates an entry in the orders table. Returns an error if it fails at any point
 func (d DDBHandler) CreateOrderInTable(order paymentHandler.Order) (err error) {
+	av, err := dynamodbattribute.MarshalMap(order)
+	if err != nil {
+		return
+	}
+
+	_, err = d.svc.PutItem(&dynamodb.PutItemInput{
+		TableName:           aws.String(d.ordersTable),
+		Item:                av,
+		ConditionExpression: aws.String("attribute_not_exists(Reference) AND attribute_not_exists(ConcertId)"),
+	})
+	return
+}
+
+// GenerateOrderReference takes a uint8 indicating the num of random characters to generate. In an infinite loop it calls the generateRandomString function, check if the returned string is unique in the dynamoDB table and breaks and returns the random in the form of a string once a unique string is found
+func (d DDBHandler) GenerateOrderReference(size uint8) (ref string) {
 	for {
-		order.Reference = generateOrderReference(4)
-		err = d.createOrderEntry(&order)
-		if _, refAlreadyExists := err.(*dynamodb.ConditionalCheckFailedException); refAlreadyExists {
-			// If we happen to generate a Reference that matches an existing one, start loop again (re-generate reference)
-			continue
-		} else {
-			// In all other cases, break from loop.
-			// If generateOrderReference was successful, err will be nil, otherwise (e.g. table doesn't exists) it will have a value
-			// the final return will return nil or the error
+		ref = generateRandomString(size)
+		orders, err := d.GetOrdersByOrderReferenceFromTable(ref)
+		if len(orders) == 0 || err != nil {
 			break
 		}
 	}
@@ -182,11 +176,11 @@ func (d DDBHandler) GetOrderFromTable(concertId string, ref string) (order *paym
 	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(d.ordersTable),
 		Key: map[string]*dynamodb.AttributeValue{
-			"ConcertId": {
-				S: aws.String(concertId),
-			},
 			"Reference": {
 				S: aws.String(ref),
+			},
+			"ConcertId": {
+				S: aws.String(concertId),
 			},
 		},
 	})
@@ -201,6 +195,28 @@ func (d DDBHandler) GetOrderFromTable(concertId string, ref string) (order *paym
 	if err != nil {
 		return
 	}
+	return
+}
+
+// GetOrdersByOrderReferenceFromTable takes an order reference and return a slice of orders, or an error if this failed
+func (d DDBHandler) GetOrdersByOrderReferenceFromTable(ref string) (orders []paymentHandler.Order, err error) {
+	filt := expression.Name("Reference").Equal(expression.Value(ref))
+	expr, err := expression.NewBuilder().WithFilter(filt).Build()
+	if err != nil {
+		return
+	}
+	result, err := d.svc.Scan(&dynamodb.ScanInput{
+		TableName:                 aws.String(d.ordersTable),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+	})
+
+	if err != nil {
+		return
+	}
+
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &orders)
 	return
 }
 
@@ -244,11 +260,11 @@ func (d DDBHandler) UpdateOrderInTable(concertID string, reference string, newSt
 			},
 		},
 		Key: map[string]*dynamodb.AttributeValue{
-			"ConcertId": {
-				S: aws.String(concertID),
-			},
 			"Reference": {
 				S: aws.String(reference),
+			},
+			"ConcertId": {
+				S: aws.String(concertID),
 			},
 		},
 	}

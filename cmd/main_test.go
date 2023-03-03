@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+//	"fmt"
+//	"os"
 	"testing"
 	"time"
 
@@ -10,6 +10,7 @@ import (
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 )
 
+/*
 func TestMain(m *testing.M) {
 	rc := m.Run()
 
@@ -22,6 +23,7 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(rc)
 }
+*/
 
 var (
 	dt             int64                   = 1672599600
