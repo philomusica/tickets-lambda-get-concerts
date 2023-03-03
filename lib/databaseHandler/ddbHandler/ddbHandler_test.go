@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	"github.com/philomusica/tickets-lambda-process-payment/lib/paymentHandler"
+	"github.com/philomusica/tickets-lambda-basket-service/lib/paymentHandler"
 )
 
 var summerEpoch int64 = 1656176400 // 25/06/22 18:00

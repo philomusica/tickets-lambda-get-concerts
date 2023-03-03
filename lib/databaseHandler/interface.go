@@ -1,7 +1,7 @@
 package databaseHandler
 
 import (
-	"github.com/philomusica/tickets-lambda-process-payment/lib/paymentHandler"
+	"github.com/philomusica/tickets-lambda-basket-service/lib/paymentHandler"
 )
 
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
