@@ -2,20 +2,21 @@ package ddbHandler
 
 import (
 	"fmt"
-	"os"
+	//"os"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/philomusica/tickets-lambda-basket-service/lib/paymentHandler"
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	"github.com/philomusica/tickets-lambda-process-payment/lib/paymentHandler"
 )
 
 var summerEpoch int64 = 1656176400 // 25/06/22 18:00
 var winterEpoch int64 = 1671991200 // 25/12/22 18:00
 
+/*
 func TestMain(m *testing.M) {
 	rc := m.Run()
 
@@ -28,6 +29,7 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(rc)
 }
+*/
 
 // ===============================================================================================================================
 // CONVERT_EPOCH_SECS_TO_DATE_AND_TIME_STRINGS TESTS
@@ -85,11 +87,11 @@ func (m *mockDynamoDBClientCannotPut) PutItem(*dynamodb.PutItemInput) (*dynamodb
 	return nil, &dynamodb.ResourceNotFoundException{}
 }
 
-func TestCreateOrderEntryCannotPut(t *testing.T) {
+func TestCreateOrderInTableCannotPut(t *testing.T) {
 	mockSvc := &mockDynamoDBClientCannotPut{}
 	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
 	order := paymentHandler.Order{}
-	err := dynamoHandler.createOrderEntry(&order)
+	err := dynamoHandler.CreateOrderInTable(order)
 	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
 
 	if !ok {
@@ -107,7 +109,9 @@ func TestCreateOrderEntryCannotPut(t *testing.T) {
 
 func TestGenerateOrderReference(t *testing.T) {
 	var size uint8 = 4
-	result := generateOrderReference(size)
+	mockSvc := &mockDynamoDBClientNoOrder{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	result := dynamoHandler.GenerateOrderReference(size)
 	if uint8(len(result)) != size {
 		t.Errorf("Expected reference of size %v, got %v", size, len(result))
 	}
@@ -129,26 +133,24 @@ func TestGenerateOrderReference(t *testing.T) {
 // CREATE_ORDER_IN_TABLE TESTS
 // ===============================================================================================================================
 
-type mockDynamoDBClientOrderReferenceMatchOnce struct {
+type mockDynamoDBClientOrderReferenceAlreadyExists struct {
 	dynamodbiface.DynamoDBAPI
-	firstCall bool
 }
 
-func (m *mockDynamoDBClientOrderReferenceMatchOnce) PutItem(input *dynamodb.PutItemInput) (output *dynamodb.PutItemOutput, err error) {
-	if m.firstCall {
-		err = &dynamodb.ConditionalCheckFailedException{}
-	}
-	m.firstCall = false
+func (m *mockDynamoDBClientOrderReferenceAlreadyExists) PutItem(input *dynamodb.PutItemInput) (output *dynamodb.PutItemOutput, err error) {
+	err = &dynamodb.ConditionalCheckFailedException{}
 	return
 }
 
 func TestCreateEntryInOrdersTableReferenceMatchOnce(t *testing.T) {
-	mockSvc := &mockDynamoDBClientOrderReferenceMatchOnce{firstCall: true}
+	mockSvc := &mockDynamoDBClientOrderReferenceAlreadyExists{}
 	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
 	order := paymentHandler.Order{}
 	err := dynamoHandler.CreateOrderInTable(order)
-	if err != nil {
-		t.Errorf("Expected nil err, got %T", err)
+	expectedErr, ok := err.(*dynamodb.ConditionalCheckFailedException)
+
+	if !ok {
+		t.Errorf("Expected %T err, got %T", expectedErr, err)
 	}
 }
 
@@ -596,7 +598,7 @@ func TestGetConcertsFromTableCannotUnmarshal(t *testing.T) {
 // ===============================================================================================================================
 
 // ===============================================================================================================================
-// GET_CONCERTS_FROM_TABLE TESTS
+// GET_ORDER_FROM_TABLE TESTS
 // ===============================================================================================================================
 
 func TestGetOrderFromTableResourceNotFound(t *testing.T) {
@@ -618,6 +620,18 @@ func (m mockDynamoDBClientNoOrder) GetItem(*dynamodb.GetItemInput) (output *dyna
 	cc := dynamodb.ConsumedCapacity{}
 	output.SetConsumedCapacity(&cc)
 	output.SetItem(nil)
+	return
+}
+
+func (m mockDynamoDBClientNoOrder) Scan(*dynamodb.ScanInput) (output *dynamodb.ScanOutput, err error) {
+	numOrders := 0
+	items := make([]map[string]*dynamodb.AttributeValue, 0)
+	numOrdersI64 := int64(numOrders)
+	output = &dynamodb.ScanOutput{
+		Count: &numOrdersI64,
+		Items: items,
+	}
+	err = &dynamodb.ResourceNotFoundException{}
 	return
 }
 
@@ -656,6 +670,50 @@ func (m mockDynamoDBClientOrderSuccess) GetItem(*dynamodb.GetItemInput) (*dynamo
 	return &output, nil
 }
 
+func (m mockDynamoDBClientOrderSuccess) Scan(*dynamodb.ScanInput) (output *dynamodb.ScanOutput, err error) {
+	numOrders := 2
+	items := make([]map[string]*dynamodb.AttributeValue, 0, numOrders)
+	item1 := map[string]*dynamodb.AttributeValue{}
+	item1["ConcertId"] = &dynamodb.AttributeValue{}
+	item1["ConcertId"].SetS("1234")
+	item1["Reference"] = &dynamodb.AttributeValue{}
+	item1["Reference"].SetS("A1B2")
+	item1["FirstName"] = &dynamodb.AttributeValue{}
+	item1["FirstName"].SetS("John")
+	item1["LastName"] = &dynamodb.AttributeValue{}
+	item1["LastName"].SetS("Smith")
+	item1["Email"] = &dynamodb.AttributeValue{}
+	item1["Email"].SetS("johnsmith@gmail.com")
+	item1["NumOfFullPrice"] = &dynamodb.AttributeValue{}
+	item1["NumOfFullPrice"].SetN(fmt.Sprint(2))
+	item1["NumOfConcessions"] = &dynamodb.AttributeValue{}
+	item1["NumOfConcessions"].SetN(fmt.Sprint(2))
+	items = append(items, item1)
+
+	item2 := map[string]*dynamodb.AttributeValue{}
+	item2["ConcertId"] = &dynamodb.AttributeValue{}
+	item2["ConcertId"].SetS("1235")
+	item2["Reference"] = &dynamodb.AttributeValue{}
+	item2["Reference"].SetS("A1B2")
+	item2["FirstName"] = &dynamodb.AttributeValue{}
+	item2["FirstName"].SetS("John")
+	item2["LastName"] = &dynamodb.AttributeValue{}
+	item2["LastName"].SetS("Smith")
+	item2["Email"] = &dynamodb.AttributeValue{}
+	item2["Email"].SetS("johnsmith@gmail.com")
+	item2["NumOfFullPrice"] = &dynamodb.AttributeValue{}
+	item2["NumOfFullPrice"].SetN(fmt.Sprint(1))
+	item2["NumOfConcessions"] = &dynamodb.AttributeValue{}
+	item2["NumOfConcessions"].SetN(fmt.Sprint(1))
+	items = append(items, item2)
+	numOrdersI64 := int64(numOrders)
+	output = &dynamodb.ScanOutput{
+		Count: &numOrdersI64,
+		Items: items,
+	}
+	return
+}
+
 func TestGetOrderFromTableSuccess(t *testing.T) {
 	mockSvc := &mockDynamoDBClientOrderSuccess{}
 	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
@@ -682,6 +740,51 @@ func (m *mockDynamoDBClientOrderCannotUnmarshal) GetItem(input *dynamodb.GetItem
 	output.SetItem(item)
 	return
 }
+
+func (m *mockDynamoDBClientOrderCannotUnmarshal) Scan(*dynamodb.ScanInput) (output *dynamodb.ScanOutput, err error) {
+	numOrders := 2
+	items := make([]map[string]*dynamodb.AttributeValue, 0, numOrders)
+	item1 := map[string]*dynamodb.AttributeValue{}
+	item1["ConcertId"] = &dynamodb.AttributeValue{}
+	item1["ConcertId"].SetBOOL(true)
+	item1["Reference"] = &dynamodb.AttributeValue{}
+	item1["Reference"].SetS("A1B2")
+	item1["FirstName"] = &dynamodb.AttributeValue{}
+	item1["FirstName"].SetS("John")
+	item1["LastName"] = &dynamodb.AttributeValue{}
+	item1["LastName"].SetS("Smith")
+	item1["Email"] = &dynamodb.AttributeValue{}
+	item1["Email"].SetS("johnsmith@gmail.com")
+	item1["NumOfFullPrice"] = &dynamodb.AttributeValue{}
+	item1["NumOfFullPrice"].SetN(fmt.Sprint(2))
+	item1["NumOfConcessions"] = &dynamodb.AttributeValue{}
+	item1["NumOfConcessions"].SetN(fmt.Sprint(2))
+	items = append(items, item1)
+
+	item2 := map[string]*dynamodb.AttributeValue{}
+	item2["ConcertId"] = &dynamodb.AttributeValue{}
+	item2["ConcertId"].SetS("1235")
+	item2["Reference"] = &dynamodb.AttributeValue{}
+	item2["Reference"].SetBOOL(false)
+	item2["FirstName"] = &dynamodb.AttributeValue{}
+	item2["FirstName"].SetS("John")
+	item2["LastName"] = &dynamodb.AttributeValue{}
+	item2["LastName"].SetS("Smith")
+	item2["Email"] = &dynamodb.AttributeValue{}
+	item2["Email"].SetS("johnsmith@gmail.com")
+	item2["NumOfFullPrice"] = &dynamodb.AttributeValue{}
+	item2["NumOfFullPrice"].SetN(fmt.Sprint(1))
+	item2["NumOfConcessions"] = &dynamodb.AttributeValue{}
+	item2["NumOfConcessions"].SetN(fmt.Sprint(1))
+	items = append(items, item2)
+	numOrdersI64 := int64(numOrders)
+	output = &dynamodb.ScanOutput{
+		Count: &numOrdersI64,
+		Items: items,
+	}
+	return
+}
+
 func TestGetOrderFromTableCannotUnmarshal(t *testing.T) {
 	mockSvc := &mockDynamoDBClientOrderCannotUnmarshal{}
 	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
@@ -693,7 +796,47 @@ func TestGetOrderFromTableCannotUnmarshal(t *testing.T) {
 }
 
 // ===============================================================================================================================
-// END GET_CONCERTS_FROM_TABLE TESTS
+// END GET_ORDER_FROM_TABLE TESTS
+// ===============================================================================================================================
+
+// ===============================================================================================================================
+// GET_ORDERS_BY_REFERENCE_FROM_TABLE TESTS
+// ===============================================================================================================================
+
+func TestGetOrdersByReferenceFromTableNoOrders(t *testing.T) {
+	mockSvc := &mockDynamoDBClientNoOrder{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	orders, err := dynamoHandler.GetOrdersByOrderReferenceFromTable("ABC")
+
+	if len(orders) != 0 || err == nil {
+		t.Errorf("Expected orders of length 0 and error, got %d and %T\n", len(orders), err)
+	}
+}
+
+func TestGetOrdersByReferenceFromTablesSuccess(t *testing.T) {
+	mockSvc := &mockDynamoDBClientOrderSuccess{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	orders, err := dynamoHandler.GetOrdersByOrderReferenceFromTable("ABC")
+
+	if len(orders) != 2 || err != nil {
+		t.Errorf("Expected orders of length 2 and nil error, got %d and %T\n", len(orders), err)
+	}
+}
+
+func TestGetOrdersByReferenceFromTableCannotUnmarshal(t *testing.T) {
+	mockSvc := &mockDynamoDBClientOrderCannotUnmarshal{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	_, err := dynamoHandler.GetOrdersByOrderReferenceFromTable("ABC")
+
+	expectedErr, ok := err.(*dynamodbattribute.UnmarshalTypeError)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T\n", expectedErr, err)
+	}
+}
+
+// ===============================================================================================================================
+// END GET_ORDERS_BY_REFERENCE_FROM_TABLE TESTS
 // ===============================================================================================================================
 
 // ===============================================================================================================================
@@ -751,6 +894,134 @@ func TestReformatDateTimeAndTicketsSuccess(t *testing.T) {
 
 // ===============================================================================================================================
 // END REFORMAT_DATE_TIME_AND_TICKETS TESTS
+// ===============================================================================================================================
+
+// ===============================================================================================================================
+// UPDATE_ORDER_IN_TABLE TESTS
+// ===============================================================================================================================
+
+func TestUpdateOrderInTableResourceNotFound(t *testing.T) {
+	mockSvc := &mockDynamoDBClientConcertResourceNotFound{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+
+	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T", expectedErr, err)
+	}
+}
+
+func TestUpdateOrderInTableNoOrder(t *testing.T) {
+	mockSvc := &mockDynamoDBClientNoOrder{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+
+	errMessage, ok := err.(paymentHandler.ErrOrderDoesNotExist)
+	if !ok {
+		t.Errorf("Expected ErrConcertDoesNotExist error, got %s\n", errMessage)
+	}
+}
+
+func TestUpdateOrderInTableCannotUnmarshal(t *testing.T) {
+	mockSvc := &mockDynamoDBClientOrderCannotUnmarshal{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+
+	expectedErr, ok := err.(*dynamodbattribute.UnmarshalTypeError)
+
+	if !ok {
+		t.Errorf("Expected err %s, got %s\n", expectedErr, err)
+	}
+}
+
+type mockDynamoDBClientUpdateOrderFails struct {
+	dynamodbiface.DynamoDBAPI
+}
+
+func (m *mockDynamoDBClientUpdateOrderFails) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
+	output = &dynamodb.GetItemOutput{}
+	item := map[string]*dynamodb.AttributeValue{}
+	item["ConcertId"] = &dynamodb.AttributeValue{}
+	item["ConcertId"].SetS("1234")
+	item["Reference"] = &dynamodb.AttributeValue{}
+	item["Reference"].SetS("A1B2")
+	item["FirstName"] = &dynamodb.AttributeValue{}
+	item["FirstName"].SetS("John")
+	item["LastName"] = &dynamodb.AttributeValue{}
+	item["LastName"].SetS("Smith")
+	item["Email"] = &dynamodb.AttributeValue{}
+	item["Email"].SetS("johnsmith@gmail.com")
+	item["NumOfFullPrice"] = &dynamodb.AttributeValue{}
+	item["NumOfFullPrice"].SetN(fmt.Sprint(2))
+	item["NumOfConcessions"] = &dynamodb.AttributeValue{}
+	item["NumOfConcessions"].SetN(fmt.Sprint(2))
+	item["Status"] = &dynamodb.AttributeValue{}
+	item["Status"].SetS("pending")
+	output.SetItem(item)
+	return
+}
+
+func (m *mockDynamoDBClientUpdateOrderFails) UpdateItem(input *dynamodb.UpdateItemInput) (output *dynamodb.UpdateItemOutput, err error) {
+	err = &dynamodb.ResourceNotFoundException{}
+	return
+}
+
+func TestUpdateOrderInTableUpdateFails(t *testing.T) {
+	mockSvc := &mockDynamoDBClientUpdateConcertsFails{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+	expectedErr, ok := err.(*dynamodb.ResourceNotFoundException)
+
+	if !ok {
+		t.Errorf("Expected error of type %T, got %T\n", expectedErr, err)
+	}
+}
+
+type mockDynamoDBClientUpdateOrderSuccess struct {
+	dynamodbiface.DynamoDBAPI
+}
+
+func (m *mockDynamoDBClientUpdateOrderSuccess) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
+	output = &dynamodb.GetItemOutput{}
+	item := map[string]*dynamodb.AttributeValue{}
+	item["ConcertId"] = &dynamodb.AttributeValue{}
+	item["ConcertId"] = &dynamodb.AttributeValue{}
+	item["ConcertId"].SetS("1234")
+	item["Reference"] = &dynamodb.AttributeValue{}
+	item["Reference"].SetS("A1B2")
+	item["FirstName"] = &dynamodb.AttributeValue{}
+	item["FirstName"].SetS("John")
+	item["LastName"] = &dynamodb.AttributeValue{}
+	item["LastName"].SetS("Smith")
+	item["Email"] = &dynamodb.AttributeValue{}
+	item["Email"].SetS("johnsmith@gmail.com")
+	item["NumOfFullPrice"] = &dynamodb.AttributeValue{}
+	item["NumOfFullPrice"].SetN(fmt.Sprint(2))
+	item["NumOfConcessions"] = &dynamodb.AttributeValue{}
+	item["NumOfConcessions"].SetN(fmt.Sprint(2))
+	item["Status"] = &dynamodb.AttributeValue{}
+	item["Status"].SetS("pending")
+	output.SetItem(item)
+	return
+}
+
+func (m *mockDynamoDBClientUpdateOrderSuccess) UpdateItem(input *dynamodb.UpdateItemInput) (output *dynamodb.UpdateItemOutput, err error) {
+	return
+}
+
+func TestUpdateOrderInTableUpdateSuccess(t *testing.T) {
+	mockSvc := &mockDynamoDBClientUpdateConcertsSuccess{}
+	dynamoHandler := New(mockSvc, "concerts-table", "orders-table")
+	err := dynamoHandler.UpdateOrderInTable("123", "ABC", "complete")
+	if err != nil {
+		t.Errorf("Expected nil error, got %T\n", err)
+	}
+
+}
+
+// ===============================================================================================================================
+// END UPDATE_ORDER_IN_TABLE TESTS
 // ===============================================================================================================================
 
 // ===============================================================================================================================

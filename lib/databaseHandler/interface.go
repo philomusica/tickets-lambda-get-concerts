@@ -1,7 +1,7 @@
 package databaseHandler
 
 import (
-	"github.com/philomusica/tickets-lambda-process-payment/lib/paymentHandler"
+	"github.com/philomusica/tickets-lambda-basket-service/lib/paymentHandler"
 )
 
 // Concert is a model of a concert which contains basic info regarding a concert, taken from dynamoDB
@@ -22,9 +22,12 @@ type Concert struct {
 
 type DatabaseHandler interface {
 	CreateOrderInTable(order paymentHandler.Order) (err error)
+	GenerateOrderReference(size uint8) (ref string)
 	GetConcertFromTable(concertID string) (concert *Concert, err error)
 	GetConcertsFromTable() (concerts []Concert, err error)
 	GetOrderFromTable(concertId string, ref string) (order *paymentHandler.Order, err error)
+	GetOrdersByOrderReferenceFromTable(ref string) (orders []paymentHandler.Order, err error)
 	ReformatDateTimeAndTickets(concert *Concert) (err error)
+	UpdateOrderInTable(concertID string, reference string, newStatus string) (err error)
 	UpdateTicketsSoldInTable(concertID string, ticketsSold uint16) (err error)
 }
