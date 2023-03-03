@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 	"github.com/philomusica/tickets-lambda-basket-service/lib/paymentHandler"
+	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 )
 
 var summerEpoch int64 = 1656176400 // 25/06/22 18:00
@@ -148,7 +148,7 @@ func TestCreateEntryInOrdersTableReferenceMatchOnce(t *testing.T) {
 	order := paymentHandler.Order{}
 	err := dynamoHandler.CreateOrderInTable(order)
 	expectedErr, ok := err.(*dynamodb.ConditionalCheckFailedException)
-	
+
 	if !ok {
 		t.Errorf("Expected %T err, got %T", expectedErr, err)
 	}
@@ -834,6 +834,7 @@ func TestGetOrdersByReferenceFromTableCannotUnmarshal(t *testing.T) {
 		t.Errorf("Expected error of type %T, got %T\n", expectedErr, err)
 	}
 }
+
 // ===============================================================================================================================
 // END GET_ORDERS_BY_REFERENCE_FROM_TABLE TESTS
 // ===============================================================================================================================

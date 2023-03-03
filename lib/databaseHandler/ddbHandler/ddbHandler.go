@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
-	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 	"github.com/philomusica/tickets-lambda-basket-service/lib/paymentHandler"
+	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
 )
 
 // ===============================================================================================================================
