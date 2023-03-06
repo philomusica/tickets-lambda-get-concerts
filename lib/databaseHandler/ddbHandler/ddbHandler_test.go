@@ -652,8 +652,8 @@ type mockDynamoDBClientOrderSuccess struct {
 func (m mockDynamoDBClientOrderSuccess) GetItem(*dynamodb.GetItemInput) (*dynamodb.GetItemOutput, error) {
 	output := dynamodb.GetItemOutput{}
 	item := map[string]*dynamodb.AttributeValue{}
-	item["ConcertId"] = &dynamodb.AttributeValue{}
-	item["ConcertId"].SetS("1234")
+	item["ConcertID"] = &dynamodb.AttributeValue{}
+	item["ConcertID"].SetS("1234")
 	item["Reference"] = &dynamodb.AttributeValue{}
 	item["Reference"].SetS("A1B2")
 	item["FirstName"] = &dynamodb.AttributeValue{}
@@ -674,8 +674,8 @@ func (m mockDynamoDBClientOrderSuccess) Scan(*dynamodb.ScanInput) (output *dynam
 	numOrders := 2
 	items := make([]map[string]*dynamodb.AttributeValue, 0, numOrders)
 	item1 := map[string]*dynamodb.AttributeValue{}
-	item1["ConcertId"] = &dynamodb.AttributeValue{}
-	item1["ConcertId"].SetS("1234")
+	item1["ConcertID"] = &dynamodb.AttributeValue{}
+	item1["ConcertID"].SetS("1234")
 	item1["Reference"] = &dynamodb.AttributeValue{}
 	item1["Reference"].SetS("A1B2")
 	item1["FirstName"] = &dynamodb.AttributeValue{}
@@ -691,8 +691,8 @@ func (m mockDynamoDBClientOrderSuccess) Scan(*dynamodb.ScanInput) (output *dynam
 	items = append(items, item1)
 
 	item2 := map[string]*dynamodb.AttributeValue{}
-	item2["ConcertId"] = &dynamodb.AttributeValue{}
-	item2["ConcertId"].SetS("1235")
+	item2["ConcertID"] = &dynamodb.AttributeValue{}
+	item2["ConcertID"].SetS("1235")
 	item2["Reference"] = &dynamodb.AttributeValue{}
 	item2["Reference"].SetS("A1B2")
 	item2["FirstName"] = &dynamodb.AttributeValue{}
@@ -721,10 +721,10 @@ func TestGetOrderFromTableSuccess(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error, got %T\n", err)
 	}
-	expectedConcertId := "1234"
+	expectedConcertID := "1234"
 	expectedReference := "A1B2"
-	if order.ConcertId != expectedConcertId || order.Reference != expectedReference {
-		t.Errorf("Expected concertId of %s and order reference of %s, got %s and %s\n", expectedConcertId, expectedReference, order.ConcertId, order.Reference)
+	if order.ConcertID != expectedConcertID || order.Reference != expectedReference {
+		t.Errorf("Expected concertId of %s and order reference of %s, got %s and %s\n", expectedConcertID, expectedReference, order.ConcertID, order.Reference)
 	}
 }
 
@@ -735,8 +735,8 @@ type mockDynamoDBClientOrderCannotUnmarshal struct {
 func (m *mockDynamoDBClientOrderCannotUnmarshal) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
 	output = &dynamodb.GetItemOutput{}
 	item := map[string]*dynamodb.AttributeValue{}
-	item["ConcertId"] = &dynamodb.AttributeValue{}
-	item["ConcertId"].SetBOOL(true)
+	item["ConcertID"] = &dynamodb.AttributeValue{}
+	item["ConcertID"].SetBOOL(true)
 	output.SetItem(item)
 	return
 }
@@ -745,8 +745,8 @@ func (m *mockDynamoDBClientOrderCannotUnmarshal) Scan(*dynamodb.ScanInput) (outp
 	numOrders := 2
 	items := make([]map[string]*dynamodb.AttributeValue, 0, numOrders)
 	item1 := map[string]*dynamodb.AttributeValue{}
-	item1["ConcertId"] = &dynamodb.AttributeValue{}
-	item1["ConcertId"].SetBOOL(true)
+	item1["ConcertID"] = &dynamodb.AttributeValue{}
+	item1["ConcertID"].SetBOOL(true)
 	item1["Reference"] = &dynamodb.AttributeValue{}
 	item1["Reference"].SetS("A1B2")
 	item1["FirstName"] = &dynamodb.AttributeValue{}
@@ -762,8 +762,8 @@ func (m *mockDynamoDBClientOrderCannotUnmarshal) Scan(*dynamodb.ScanInput) (outp
 	items = append(items, item1)
 
 	item2 := map[string]*dynamodb.AttributeValue{}
-	item2["ConcertId"] = &dynamodb.AttributeValue{}
-	item2["ConcertId"].SetS("1235")
+	item2["ConcertID"] = &dynamodb.AttributeValue{}
+	item2["ConcertID"].SetS("1235")
 	item2["Reference"] = &dynamodb.AttributeValue{}
 	item2["Reference"].SetBOOL(false)
 	item2["FirstName"] = &dynamodb.AttributeValue{}
@@ -942,8 +942,8 @@ type mockDynamoDBClientUpdateOrderFails struct {
 func (m *mockDynamoDBClientUpdateOrderFails) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
 	output = &dynamodb.GetItemOutput{}
 	item := map[string]*dynamodb.AttributeValue{}
-	item["ConcertId"] = &dynamodb.AttributeValue{}
-	item["ConcertId"].SetS("1234")
+	item["ConcertID"] = &dynamodb.AttributeValue{}
+	item["ConcertID"].SetS("1234")
 	item["Reference"] = &dynamodb.AttributeValue{}
 	item["Reference"].SetS("A1B2")
 	item["FirstName"] = &dynamodb.AttributeValue{}
@@ -985,9 +985,9 @@ type mockDynamoDBClientUpdateOrderSuccess struct {
 func (m *mockDynamoDBClientUpdateOrderSuccess) GetItem(input *dynamodb.GetItemInput) (output *dynamodb.GetItemOutput, err error) {
 	output = &dynamodb.GetItemOutput{}
 	item := map[string]*dynamodb.AttributeValue{}
-	item["ConcertId"] = &dynamodb.AttributeValue{}
-	item["ConcertId"] = &dynamodb.AttributeValue{}
-	item["ConcertId"].SetS("1234")
+	item["ConcertID"] = &dynamodb.AttributeValue{}
+	item["ConcertID"] = &dynamodb.AttributeValue{}
+	item["ConcertID"].SetS("1234")
 	item["Reference"] = &dynamodb.AttributeValue{}
 	item["Reference"].SetS("A1B2")
 	item["FirstName"] = &dynamodb.AttributeValue{}
