@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"encoding/json"
@@ -27,16 +27,19 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 		var concerts []databaseHandler.Concert
 		concerts, err = dynamoHandler.GetConcertsFromTable()
 		if err != nil || len(concerts) == 0 {
+			fmt.Println("error from GetConcertsFromTable is ", err)
 			return
 		}
 		for i := 0; i < len(concerts); i++ {
 			err = dynamoHandler.ReformatDateTimeAndTickets(&concerts[i])
 			if err != nil {
+				fmt.Println("error from ReformatDateTimeAndTickets is ", err)
 				return
 			}
 		}
 		byteArray, err = json.Marshal(&concerts)
 		if err != nil {
+			fmt.Println("error from Marshal is ", err)
 			return
 		}
 	} else {
@@ -46,7 +49,6 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 			return
 		}
 		err = dynamoHandler.ReformatDateTimeAndTickets(concert)
-		fmt.Println(concert)
 		if err != nil {
 			return
 		}
@@ -86,14 +88,18 @@ func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayP
 	concertsTable := os.Getenv("CONCERTS_TABLE")
 	ordersTable := os.Getenv("ORDERS_TABLE")
 	if concertsTable == "" || ordersTable == "" {
-		fmt.Println("CONCERT_TABLE and/or ORDERS_TABLE environment variables not set")
+		fmt.Println("CONCERTS_TABLE and/or ORDERS_TABLE environment variables not set")
 		response.StatusCode = 500
 		return
 	}
 
 	dynamoHandler := ddbHandler.New(svc, concertsTable, ordersTable)
 
-	return getConcertData(request, dynamoHandler)
+	response, err = getConcertData(request, dynamoHandler)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return
 }
 
 func main() {

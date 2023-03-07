@@ -57,7 +57,7 @@ func validateConcert(c *databaseHandler.Concert) (valid bool) {
 
 	if c.ID != "" && c.Title != "" && c.ImageURL != "" &&
 		c.DateTime != nil && *c.DateTime > 0 && c.TotalTickets != nil && *c.TotalTickets > 0 &&
-		c.TicketsSold != nil && c.FullPrice > 0.0 && c.ConcessionPrice > 0.0 {
+		c.TicketsSold != nil && c.FullPrice > 0.0 {
 		valid = true
 	}
 	return
@@ -154,6 +154,8 @@ func (d DDBHandler) GetConcertsFromTable() (concerts []databaseHandler.Concert, 
 	if err != nil {
 		return
 	}
+
+	fmt.Println(result)
 
 	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &concerts)
 	if err != nil {
