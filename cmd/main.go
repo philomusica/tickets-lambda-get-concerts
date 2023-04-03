@@ -13,12 +13,15 @@ import (
 	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler/ddbHandler"
 )
 
+const DEFAULT_JSON_RESPONSE string = `{"error": "unable to retrieve concert data"}`
+
 // ===============================================================================================================================
 // PRIVATE FUNCTIONS
 // ===============================================================================================================================
 func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databaseHandler.DatabaseHandler) (response events.APIGatewayProxyResponse, err error) {
+
 	response = events.APIGatewayProxyResponse{
-		Body:       "Unable to retrieve concerts",
+		Body:       DEFAULT_JSON_RESPONSE,
 		StatusCode: 404,
 		Headers:    map[string]string{"Access-Control-Allow-Origin": "*"},
 	}
@@ -75,8 +78,9 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 
 // Handler is lambda handler function that executes the relevant business logic
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+
 	response := events.APIGatewayProxyResponse{
-		Body:       "Unable to retrieve concerts - Internal Server Error",
+		Body:       DEFAULT_JSON_RESPONSE,
 		StatusCode: 404,
 		Headers:    map[string]string{"Access-Control-Allow-Origin": "*"},
 	}
