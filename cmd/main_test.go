@@ -91,7 +91,7 @@ func TestGetConcertDataCannotUnmarshalConcert(t *testing.T) {
 	mockddbHandler := mockDDBHandlerGetConcertsReturnsEmptyConcertsSlice{}
 	response, _ := getConcertData(request, mockddbHandler)
 	expectedStatusCode := 404
-	expectedBody := "Unable to retrieve concerts"
+	expectedBody := DEFAULT_JSON_RESPONSE
 
 	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
 		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
@@ -272,7 +272,7 @@ func TestHandlerEnvironmentVariablesNotSet(t *testing.T) {
 	request := events.APIGatewayProxyRequest{}
 	response, _ := Handler(request)
 	expectedStatusCode := 500
-	expectedBody := "Unable to retrieve concerts - Internal Server Error"
+	expectedBody := DEFAULT_JSON_RESPONSE
 	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {
 		t.Errorf("Expected status code %d and body %s, got %d and %s\n", response.StatusCode, response.Body, expectedStatusCode, expectedBody)
 	}
