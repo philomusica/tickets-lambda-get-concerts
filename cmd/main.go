@@ -20,6 +20,7 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 	response = events.APIGatewayProxyResponse{
 		Body:       "Unable to retrieve concerts",
 		StatusCode: 404,
+		Headers: map[string]string{"Access-Control-Allow-Origin": "*"},
 	}
 	var byteArray []byte
 	id := request.QueryStringParameters["id"]
@@ -77,6 +78,7 @@ func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayP
 	response = events.APIGatewayProxyResponse{
 		Body:       "Unable to retrieve concerts - Internal Server Error",
 		StatusCode: 404,
+		Headers: map[string]string{"Access-Control-Allow-Origin": "*"},
 	}
 
 	sess, err := session.NewSession()
