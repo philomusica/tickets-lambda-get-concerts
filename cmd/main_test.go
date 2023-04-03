@@ -270,7 +270,7 @@ func TestGetConcertDataGetConcertSuccess(t *testing.T) {
 
 func TestHandlerEnvironmentVariablesNotSet(t *testing.T) {
 	request := events.APIGatewayProxyRequest{}
-	response := Handler(request)
+	response, _ := Handler(request)
 	expectedStatusCode := 500
 	expectedBody := "Unable to retrieve concerts - Internal Server Error"
 	if response.StatusCode != expectedStatusCode || response.Body != expectedBody {

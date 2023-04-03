@@ -20,7 +20,7 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 	response = events.APIGatewayProxyResponse{
 		Body:       "Unable to retrieve concerts",
 		StatusCode: 404,
-		Headers: map[string]string{"Access-Control-Allow-Origin": "*"},
+		Headers:    map[string]string{"Access-Control-Allow-Origin": "*"},
 	}
 	var byteArray []byte
 	id := request.QueryStringParameters["id"]
@@ -74,16 +74,16 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 // ===============================================================================================================================
 
 // Handler is lambda handler function that executes the relevant business logic
-func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayProxyResponse) {
-	response = events.APIGatewayProxyResponse{
+func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	response := events.APIGatewayProxyResponse{
 		Body:       "Unable to retrieve concerts - Internal Server Error",
 		StatusCode: 404,
-		Headers: map[string]string{"Access-Control-Allow-Origin": "*"},
+		Headers:    map[string]string{"Access-Control-Allow-Origin": "*"},
 	}
 
 	sess, err := session.NewSession()
 	if err != nil {
-		return
+		return response, nil
 	}
 	svc := dynamodb.New(sess)
 
@@ -92,7 +92,7 @@ func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayP
 	if concertsTable == "" || ordersTable == "" {
 		fmt.Println("CONCERTS_TABLE and/or ORDERS_TABLE environment variables not set")
 		response.StatusCode = 500
-		return
+		return response, nil
 	}
 
 	dynamoHandler := ddbHandler.New(svc, concertsTable, ordersTable)
@@ -101,7 +101,7 @@ func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayP
 	if err != nil {
 		fmt.Println(err)
 	}
-	return
+	return response, nil
 }
 
 func main() {
