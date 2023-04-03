@@ -74,7 +74,7 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 // ===============================================================================================================================
 
 // Handler is lambda handler function that executes the relevant business logic
-func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayProxyResponse, err error) {
+func Handler(request events.APIGatewayProxyRequest) (response events.APIGatewayProxyResponse) {
 	response = events.APIGatewayProxyResponse{
 		Body:       "Unable to retrieve concerts - Internal Server Error",
 		StatusCode: 404,
