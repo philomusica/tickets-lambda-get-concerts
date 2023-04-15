@@ -81,7 +81,7 @@ func (d DDBHandler) CreateOrderInTable(order paymentHandler.Order) (err error) {
 	_, err = d.svc.PutItem(&dynamodb.PutItemInput{
 		TableName:           aws.String(d.ordersTable),
 		Item:                av,
-		ConditionExpression: aws.String("attribute_not_exists(OrderReference) AND attribute_not_exists(ConcertID)"),
+		ConditionExpression: aws.String("attribute_not_exists(orderReference) AND attribute_not_exists(concertID)"),
 	})
 	return
 }
