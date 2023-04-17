@@ -202,7 +202,7 @@ func (d DDBHandler) GetOrderFromTable(concertId string, ref string) (order *paym
 
 // GetOrdersByOrderReferenceFromTable takes an order reference and return a slice of orders, or an error if this failed
 func (d DDBHandler) GetOrdersByOrderReferenceFromTable(ref string) (orders []paymentHandler.Order, err error) {
-	filt := expression.Name("OrderReference").Equal(expression.Value(ref))
+	filt := expression.Name("orderReference").Equal(expression.Value(ref))
 	expr, err := expression.NewBuilder().WithFilter(filt).Build()
 	if err != nil {
 		return
