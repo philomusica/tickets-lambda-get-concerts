@@ -81,7 +81,7 @@ func (d DDBHandler) CreateOrderInTable(order paymentHandler.Order) (err error) {
 	_, err = d.svc.PutItem(&dynamodb.PutItemInput{
 		TableName:           aws.String(d.ordersTable),
 		Item:                av,
-		ConditionExpression: aws.String("attribute_not_exists(Reference) AND attribute_not_exists(ConcertID)"),
+		ConditionExpression: aws.String("attribute_not_exists(orderReference) AND attribute_not_exists(concertID)"),
 	})
 	return
 }
@@ -178,7 +178,7 @@ func (d DDBHandler) GetOrderFromTable(concertId string, ref string) (order *paym
 	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(d.ordersTable),
 		Key: map[string]*dynamodb.AttributeValue{
-			"Reference": {
+			"OrderReference": {
 				S: aws.String(ref),
 			},
 			"ConcertID": {
@@ -202,7 +202,7 @@ func (d DDBHandler) GetOrderFromTable(concertId string, ref string) (order *paym
 
 // GetOrdersByOrderReferenceFromTable takes an order reference and return a slice of orders, or an error if this failed
 func (d DDBHandler) GetOrdersByOrderReferenceFromTable(ref string) (orders []paymentHandler.Order, err error) {
-	filt := expression.Name("Reference").Equal(expression.Value(ref))
+	filt := expression.Name("orderReference").Equal(expression.Value(ref))
 	expr, err := expression.NewBuilder().WithFilter(filt).Build()
 	if err != nil {
 		return
@@ -262,7 +262,7 @@ func (d DDBHandler) UpdateOrderInTable(concertID string, reference string, newSt
 			},
 		},
 		Key: map[string]*dynamodb.AttributeValue{
-			"Reference": {
+			"OrderReference": {
 				S: aws.String(reference),
 			},
 			"ConcertID": {
