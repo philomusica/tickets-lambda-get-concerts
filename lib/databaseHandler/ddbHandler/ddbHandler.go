@@ -178,10 +178,10 @@ func (d DDBHandler) GetOrderFromTable(concertId string, ref string) (order *paym
 	result, err := d.svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(d.ordersTable),
 		Key: map[string]*dynamodb.AttributeValue{
-			"OrderReference": {
+			"orderReference": {
 				S: aws.String(ref),
 			},
-			"ConcertID": {
+			"concertID": {
 				S: aws.String(concertId),
 			},
 		},
