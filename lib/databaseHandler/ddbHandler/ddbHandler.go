@@ -262,10 +262,10 @@ func (d DDBHandler) UpdateOrderInTable(concertID string, reference string, newSt
 			},
 		},
 		Key: map[string]*dynamodb.AttributeValue{
-			"OrderReference": {
+			"orderReference": {
 				S: aws.String(reference),
 			},
-			"ConcertID": {
+			"concertID": {
 				S: aws.String(concertID),
 			},
 		},
