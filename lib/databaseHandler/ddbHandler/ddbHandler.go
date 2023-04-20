@@ -271,7 +271,7 @@ func (d DDBHandler) UpdateOrderInTable(concertID string, reference string, newSt
 		},
 		ReturnValues:     aws.String("ALL_NEW"),
 		TableName: aws.String(d.ordersTable),
-		UpdateExpression: aws.String("set status = :ns"),
+		UpdateExpression: aws.String("set orderStatus = :ns"),
 	}
 
 	_, err = d.svc.UpdateItem(input)
