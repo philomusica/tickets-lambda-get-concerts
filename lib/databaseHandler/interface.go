@@ -8,6 +8,7 @@ import (
 type Concert struct {
 	ID               string  `json:"id"`
 	Title            string  `json:"title"`
+	Description      string  `json:"description"`
 	ImageURL         string  `json:"imageURL"`
 	Location         string  `json:"location"`
 	DateTime         *int64  `json:"dateTime,omitempty"`
