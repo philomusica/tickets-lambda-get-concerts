@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
-	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler/ddbHandler"
+	"github.com/philomusica/tickets-lambda-utils/lib/databaseHandler"
+	"github.com/philomusica/tickets-lambda-utils/lib/databaseHandler/ddbHandler"
 )
 
 const DEFAULT_JSON_RESPONSE string = `{"error": "unable to retrieve concert data"}`
@@ -23,7 +23,7 @@ func getConcertData(request events.APIGatewayProxyRequest, dynamoHandler databas
 	response = events.APIGatewayProxyResponse{
 		Body:       DEFAULT_JSON_RESPONSE,
 		StatusCode: 404,
-		Headers:    map[string]string{"Access-Control-Allow-Origin": "*"},
+		Headers:    map[string]string{"Access-Control-Allow-Origin": "https://philomusica.org.uk"},
 	}
 	var byteArray []byte
 	id := request.QueryStringParameters["id"]
@@ -82,7 +82,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	response := events.APIGatewayProxyResponse{
 		Body:       DEFAULT_JSON_RESPONSE,
 		StatusCode: 404,
-		Headers:    map[string]string{"Access-Control-Allow-Origin": "*"},
+		Headers:    map[string]string{"Access-Control-Allow-Origin": "https://philomusica.org.uk"},
 	}
 
 	sess, err := session.NewSession()

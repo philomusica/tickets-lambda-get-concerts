@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/philomusica/tickets-lambda-get-concerts/lib/databaseHandler"
+	"github.com/philomusica/tickets-lambda-utils/lib/databaseHandler"
 )
 
 /*

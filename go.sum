@@ -4,6 +4,8 @@ github.com/aws/aws-lambda-go v1.39.1 h1:UcuX9O3JqhQyP/rxPJEpTUUSehzqkNpwKKRFa9N+
 github.com/aws/aws-lambda-go v1.39.1/go.mod h1:jwFe2KmMsHmffA1X2R09hH6lFzJQxzI8qK17ewzbQMM=
 github.com/aws/aws-lambda-go v1.40.0 h1:6dKcDpXsTpapfCFF6Debng6CiV/Z3sNHekM6bwhI2J0=
 github.com/aws/aws-lambda-go v1.40.0/go.mod h1:jwFe2KmMsHmffA1X2R09hH6lFzJQxzI8qK17ewzbQMM=
+github.com/aws/aws-lambda-go v1.41.0 h1:l/5fyVb6Ud9uYd411xdHZzSf2n86TakxzpvIoz7l+3Y=
+github.com/aws/aws-lambda-go v1.41.0/go.mod h1:jwFe2KmMsHmffA1X2R09hH6lFzJQxzI8qK17ewzbQMM=
 github.com/aws/aws-sdk-go v1.44.213 h1:WahquyWs7cQdz0vpDVWyWETEemgSoORx0PbWL9oz2WA=
 github.com/aws/aws-sdk-go v1.44.213/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/aws/aws-sdk-go v1.44.215 h1:K3KERfO6MaV349idub2w1u1H0R0KSkED0LshPnaAn3Q=
@@ -18,6 +20,10 @@ github.com/aws/aws-sdk-go v1.44.246 h1:iLxPX6JU0bxAci9R6/bp8rX0kL871ByCTx0MZlQWv
 github.com/aws/aws-sdk-go v1.44.246/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/aws/aws-sdk-go v1.44.247 h1:oUJZr62HT8RIo9nRCwam8iXzXnSIwwndSVGH0/gym+E=
 github.com/aws/aws-sdk-go v1.44.247/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
+github.com/aws/aws-sdk-go v1.44.332 h1:Ze+98F41+LxoJUdsisAFThV+0yYYLYw17/Vt0++nFYM=
+github.com/aws/aws-sdk-go v1.44.332/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
+github.com/aws/aws-sdk-go v1.45.24 h1:TZx/CizkmCQn8Rtsb11iLYutEQVGK5PK9wAhwouELBo=
+github.com/aws/aws-sdk-go v1.45.24/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
@@ -30,6 +36,12 @@ github.com/philomusica/tickets-lambda-basket-service v1.3.3 h1:X2G1vxGIWBzB0wt15
 github.com/philomusica/tickets-lambda-basket-service v1.3.3/go.mod h1:9EqXVlZ7JRzAThjzppNGSiyDHw3ibFYwKlR6zM5s3mU=
 github.com/philomusica/tickets-lambda-basket-service v1.3.5 h1:udg236/qChRzTORNbEEXxNaj6qqUn6akbfeA/nOxMdo=
 github.com/philomusica/tickets-lambda-basket-service v1.3.5/go.mod h1:IxxCa4B+Tn1xpHhE4nUTchz4FMXj3eeWgnqyB/Q5+SM=
+github.com/philomusica/tickets-lambda-utils v0.1.2 h1:nl6c4eiadUvQ4GDhBkLr+BqPuicJvOHZuPlq6te4/is=
+github.com/philomusica/tickets-lambda-utils v0.1.2/go.mod h1:kdyNNp5zLa+cCgU8dwh5yFESG6a3Acwor4rXTJO8B0g=
+github.com/philomusica/tickets-lambda-utils v0.1.3 h1:HWBMSroqVSKhnyArSsyFCaG6EhoClJlWS0VaEZXRfN8=
+github.com/philomusica/tickets-lambda-utils v0.1.3/go.mod h1:kdyNNp5zLa+cCgU8dwh5yFESG6a3Acwor4rXTJO8B0g=
+github.com/philomusica/tickets-lambda-utils v0.2.0 h1:ziHeIdmv907GodL6ZCuYi3DIlPXLs8rFYQRXjiwKgGY=
+github.com/philomusica/tickets-lambda-utils v0.2.0/go.mod h1:kdyNNp5zLa+cCgU8dwh5yFESG6a3Acwor4rXTJO8B0g=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
